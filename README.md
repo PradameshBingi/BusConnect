@@ -9,7 +9,7 @@ To get started, take a look at src/app/page.tsx.
 BusConnect is a modern web application that helps users easily search for buses, book tickets, and manage their travel digitally.
 The platform provides a smooth user experience for passengers to explore routes, view schedules, and reserve seats online.
 
-🌐 **Live Website:** https://busconnect-meeticket.in
+🌐 **Live Website:** https://busconnect-meeticket.netlify.app
 📦 **GitHub Repository:** https://github.com/PradameshBingi/BusConnect
 
 ---
@@ -64,21 +64,6 @@ BusConnect
 ├── next.config.ts
 ├── package.json
 └── README.md
-```
-
----
-
-# ⚙️ Environment Variables
-
-Create a `.env.local` file and add the following variables:
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 ```
 
 ---
@@ -147,13 +132,13 @@ Firebase API keys are exposed on the client side but protected using Firebase se
 **Pradamesh Bingi**
 
 * GitHub: https://github.com/PradameshBingi
-* Website: https://busconnect-meeticket.in
+* Website: https://busconnect-meeticket.netlify.app
 
 ---
 
 # 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the License.
 
 ---
 
