@@ -1,4 +1,4 @@
-# 🚍 BusConnect – Smart Bus Ticket Booking Platform
+# 🚍 BusConnect – Smart Bus Ticket Booking Platform for TGSRTC HYDERABAD
 
 BusConnect is a modern web application that helps users easily search for buses, book tickets, and manage their travel digitally.
 The platform provides a smooth user experience for passengers to explore routes, view schedules, and reserve seats online.
