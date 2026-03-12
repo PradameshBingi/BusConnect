@@ -97,7 +97,7 @@ npm run dev
 Open in browser:
 
 ```
-http://localhost:3000
+https://busconnect-meeticket.netlify.app
 ```
 
 ---
@@ -121,11 +121,6 @@ Firebase API keys are exposed on the client side but protected using Firebase se
 
 ---
 
-# 📸 Screenshots
-
-(Add screenshots of your project UI here)
-
----
 
 # 👨‍💻 Author
 
