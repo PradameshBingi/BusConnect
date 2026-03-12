@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -94,6 +95,7 @@ export default function VerifyTicketPage() {
     };
 
     const renderTicketDetailsView = (ticket: TicketDetails) => {
+        const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
         return (
             <div className='space-y-4'>
                 <Separator/>
@@ -127,12 +129,13 @@ export default function VerifyTicketPage() {
                    </div>
                    <div className="flex items-center gap-2">
                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                          <p className="font-semibold text-[10px] uppercase">Payment</p>
-                          {((ticket.walletAmountUsed || 0) > 0 && (ticket.fare || 0) === 0) ? (
-                            <p className="text-primary font-bold flex items-center gap-1 text-[10px]"><Wallet className="h-3 w-3" /> Wallet: Rs. {(ticket.walletAmountUsed || 0).toFixed(2)}</p>
-                          ) : (
-                            <p className="text-muted-foreground font-bold">Rs. {(ticket.fare || 0).toFixed(2)}</p>
+                      <div className="flex-1">
+                          <p className="font-semibold text-[10px] uppercase">Total Cost</p>
+                          <p className="font-bold text-sm">Rs. {totalCost.toFixed(2)}</p>
+                          {(ticket.walletAmountUsed || 0) > 0 && (
+                            <p className="text-primary font-bold flex items-center gap-1 text-[8px] mt-0.5">
+                                <Wallet className="h-3 w-3" /> Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}
+                            </p>
                           )}
                       </div>
                    </div>

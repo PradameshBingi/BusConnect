@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -102,6 +103,7 @@ export default function BookingHistoryPage() {
               const expiry = new Date(ticket.createdAt).getTime() + 60000;
               const isExpired = new Date().getTime() > expiry && ticket.status === 'valid';
               const status = isExpired ? 'expired' : ticket.status;
+              const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
 
               return (
               <Card key={ticket.ticketCode} className="border-l-4 border-l-primary shadow-sm">
@@ -126,11 +128,16 @@ export default function BookingHistoryPage() {
                         <p>From: {ticket.from}</p><p>To: {ticket.to}</p>
                     </div>
                      <div className="flex justify-between items-end mt-3 text-sm">
-                        <div>
-                            {(ticket.fare === 0 && (ticket.walletAmountUsed || 0) > 0) ? (
-                                <p className="font-bold text-primary flex items-center gap-1"><Wallet className="h-4 w-4"/> From Wallet: Rs. {(ticket.walletAmountUsed || 0).toFixed(2)}</p>
-                            ) : (
-                                <p className="font-bold">Paid: Rs. {(ticket.fare || 0).toFixed(2)}</p>
+                        <div className="space-y-1">
+                            <p className="font-bold">Total: Rs. {totalCost.toFixed(2)}</p>
+                            {(ticket.walletAmountUsed || 0) > 0 && (
+                                <p className="text-[10px] text-primary flex items-center gap-1 font-medium">
+                                    <Wallet className="h-3 w-3" /> Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}
+                                    {ticket.fare > 0 && ` + Paid: Rs. ${ticket.fare.toFixed(2)}`}
+                                </p>
+                            )}
+                            {(ticket.walletAmountUsed || 0) === 0 && (
+                                <p className="text-[10px] text-muted-foreground italic">Paid via Digital</p>
                             )}
                         </div>
                         <Badge variant="outline">{getFullBusType(ticket.busType)}</Badge>

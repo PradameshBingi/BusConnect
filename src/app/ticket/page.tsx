@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -111,6 +112,7 @@ function TicketContent() {
   const expiryTimestamp = issueDate.getTime() + 60 * 1000;
   const isCurrentlyExpired = new Date().getTime() > expiryTimestamp;
   const canShowUpgrade = ticket.status === 'valid' && !isCurrentlyExpired && ticket.busType !== 'deluxe';
+  const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 md:p-8">
@@ -150,12 +152,11 @@ function TicketContent() {
              <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-primary" />
                 <div>
-                    <p className="text-[9px] uppercase">Payment</p>
-                    <p className="font-bold">
-                        {((ticket.walletAmountUsed || 0) > 0 && (ticket.fare || 0) === 0) 
-                          ? `Wallet: Rs. ${(ticket.walletAmountUsed || 0).toFixed(2)}` 
-                          : `Rs. ${(ticket.fare || 0).toFixed(2)}`}
-                    </p>
+                    <p className="text-[9px] uppercase">Total Cost</p>
+                    <p className="font-bold">Rs. {totalCost.toFixed(2)}</p>
+                    {(ticket.walletAmountUsed || 0) > 0 && (
+                        <p className="text-[8px] text-primary font-medium">Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)} + Paid: Rs. {ticket.fare.toFixed(2)}</p>
+                    )}
                 </div>
              </div>
               <div className="flex items-center gap-2">
