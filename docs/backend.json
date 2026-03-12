@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Route": {
+      "title": "Bus Route",
+      "description": "Defines a bus route with a number and name.",
+      "type": "object",
+      "properties": {
+        "routeNumber": {
+          "type": "string",
+          "description": "A 2-digit unique identifier for the route (e.g., '01', '25')."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the route's primary location (e.g., 'Mehdipatnam')."
+        }
+      },
+      "required": ["routeNumber", "name"]
+    },
+    "Ticket": {
+      "title": "Bus Ticket",
+      "description": "Represents a single-use bus ticket.",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "The starting point of the journey."
+        },
+        "to": {
+          "type": "string",
+          "description": "The destination of the journey."
+        },
+        "routeNo": {
+          "type": "string",
+          "description": "The 2-digit route number for this ticket."
+        },
+        "passengers": {
+          "type": "string",
+          "description": "Summary of passengers (e.g., 'Adult: 1, Child: 2')."
+        },
+        "fare": {
+          "type": "number",
+          "description": "The price paid for the ticket."
+        },
+        "ticketCode": {
+          "type": "string",
+          "description": "The unique auto-generated ticket code (TKT-XX-YYYYY)."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the ticket.",
+          "enum": ["valid", "invalid"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the ticket was created."
+        }
+      },
+      "required": ["from", "to", "routeNo", "passengers", "fare", "ticketCode", "status", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {}
+}
