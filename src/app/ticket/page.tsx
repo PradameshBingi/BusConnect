@@ -154,8 +154,10 @@ function TicketContent() {
                 <div>
                     <p className="text-[9px] uppercase">Total Cost</p>
                     <p className="font-bold">Rs. {totalCost.toFixed(2)}</p>
-                    {(ticket.walletAmountUsed || 0) > 0 && (
-                        <p className="text-[8px] text-primary font-medium">Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)} + Paid: Rs. {ticket.fare.toFixed(2)}</p>
+                    {(ticket.walletAmountUsed || 0) > 0 ? (
+                        <p className="text-[8px] text-primary font-medium">Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}{ticket.fare > 0 ? ` + Paid: Rs. ${ticket.fare.toFixed(2)}` : ''}</p>
+                    ) : (
+                        <p className="text-[8px] text-muted-foreground italic">Paid: Rs. {ticket.fare.toFixed(2)}</p>
                     )}
                 </div>
              </div>

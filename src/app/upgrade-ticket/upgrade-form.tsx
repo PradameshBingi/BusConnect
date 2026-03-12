@@ -85,6 +85,7 @@ export function UpgradeForm({ ticket }: { ticket: Ticket }) {
                     totalFare: selectedUpgrade.newTotalFare,
                     fare: ticket.fare + selectedUpgrade.amountToPay,
                     walletAmountUsed: (ticket.walletAmountUsed || 0) + selectedUpgrade.walletUsedForUpgrade,
+                    createdAt: new Date().toISOString(), // Reset timer on upgrade
                 };
 
                 storedTickets[ticketIndex] = upgradedTicket;
@@ -103,7 +104,7 @@ export function UpgradeForm({ ticket }: { ticket: Ticket }) {
                 }
                 
                 const encodedData = btoa(JSON.stringify(upgradedTicket));
-                toast({ title: "Upgrade Successful!", description: `Upgraded to ${selectedUpgrade.title}.` });
+                toast({ title: "Upgrade Successful!", description: `Upgraded to ${selectedUpgrade.title}. Timer restarted.` });
                 router.push(`/ticket?id=${ticket.ticketCode}&data=${encodedData}`);
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Upgrade Failed', description: error.message });

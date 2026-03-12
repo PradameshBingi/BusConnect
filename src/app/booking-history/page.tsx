@@ -130,14 +130,13 @@ export default function BookingHistoryPage() {
                      <div className="flex justify-between items-end mt-3 text-sm">
                         <div className="space-y-1">
                             <p className="font-bold">Total: Rs. {totalCost.toFixed(2)}</p>
-                            {(ticket.walletAmountUsed || 0) > 0 && (
+                            {(ticket.walletAmountUsed || 0) > 0 ? (
                                 <p className="text-[10px] text-primary flex items-center gap-1 font-medium">
                                     <Wallet className="h-3 w-3" /> Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}
-                                    {ticket.fare > 0 && ` + Paid: Rs. ${ticket.fare.toFixed(2)}`}
+                                    {ticket.fare > 0 ? ` + Paid: Rs. ${ticket.fare.toFixed(2)}` : ''}
                                 </p>
-                            )}
-                            {(ticket.walletAmountUsed || 0) === 0 && (
-                                <p className="text-[10px] text-muted-foreground italic">Paid via Digital</p>
+                            ) : (
+                                <p className="text-[10px] text-muted-foreground italic">Paid: Rs. {ticket.fare.toFixed(2)}</p>
                             )}
                         </div>
                         <Badge variant="outline">{getFullBusType(ticket.busType)}</Badge>
