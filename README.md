@@ -1,9 +1,3 @@
-# Firebase Studio
-
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
-
 # 🚍 BusConnect – Smart Bus Ticket Booking Platform
 
 BusConnect is a modern web application that helps users easily search for buses, book tickets, and manage their travel digitally.
