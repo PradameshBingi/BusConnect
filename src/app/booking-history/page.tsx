@@ -63,6 +63,7 @@ export default function BookingHistoryPage() {
     if (refundAmount > 0) {
       const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
       walletData.balance += refundAmount;
+      walletData.transactions = walletData.transactions || [];
       walletData.transactions.push({
         type: 'credit',
         description: `Refund for ${ticketCode}`,
@@ -104,6 +105,7 @@ export default function BookingHistoryPage() {
               const isExpired = new Date().getTime() > expiry && ticket.status === 'valid';
               const status = isExpired ? 'expired' : ticket.status;
               const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
+              const canUpgrade = ticket.busType !== 'deluxe';
 
               return (
               <Card key={ticket.ticketCode} className="border-l-4 border-l-primary shadow-sm">
@@ -147,12 +149,14 @@ export default function BookingHistoryPage() {
                     {status === 'valid' && (
                       <div className="mt-4 pt-4 border-t space-y-4">
                         <CountdownTimer expiryTimestamp={expiry} />
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button asChild variant="outline" size="sm" className="border-primary text-primary">
-                            <Link href={`/upgrade-ticket?id=${ticket.ticketCode}`}><ArrowUpCircle className="mr-2 h-4 w-4" /> Upgrade</Link>
-                          </Button>
+                        <div className={cn("grid gap-2", canUpgrade ? "grid-cols-2" : "grid-cols-1")}>
+                          {canUpgrade && (
+                            <Button asChild variant="outline" size="sm" className="border-primary text-primary">
+                              <Link href={`/upgrade-ticket?id=${ticket.ticketCode}`}><ArrowUpCircle className="mr-2 h-4 w-4" /> Upgrade</Link>
+                            </Button>
+                          )}
                           <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm">Cancel</Button></AlertDialogTrigger>
+                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full">Cancel</Button></AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader><AlertDialogTitle>Cancel Ticket?</AlertDialogTitle><AlertDialogDescription>10% fee applies. Refund to wallet.</AlertDialogDescription></AlertDialogHeader>
                               <AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => handleCancelTicket(ticket.ticketCode)}>Yes, Cancel</AlertDialogAction></AlertDialogFooter>
