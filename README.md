@@ -9,7 +9,7 @@ To get started, take a look at src/app/page.tsx.
 BusConnect is a modern web application that helps users easily search for buses, book tickets, and manage their travel digitally.
 The platform provides a smooth user experience for passengers to explore routes, view schedules, and reserve seats online.
 
-🌐 **Live Website:** https://busconnect-meeticket.netlify.app
+🌐 **Live Website:** https://busconnect-meeticket.netlify.app <br>
 📦 **GitHub Repository:** https://github.com/PradameshBingi/BusConnect
 
 ---
