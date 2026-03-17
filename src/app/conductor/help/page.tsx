@@ -26,16 +26,20 @@ const passengerFaqs = [
     answer: "If your ticket expires (after the 1-minute cancellation window), it can no longer be used for travel. However, the amount you paid, minus a 10% processing fee, will be automatically credited to your wallet since the ticket was not used."
   },
   {
-    question: "What if I board a different bus than the one I booked?",
-    answer: "Please inform the conductor immediately. They will use their 'Verify by Bus Type' tool to check for any fare difference. If you paid less than required, you'll need to pay the difference in cash. If you overpaid, the conductor will issue a refund code which you can redeem in your wallet."
+    question: "How do I upgrade my ticket?",
+    answer: "If you have a valid ticket and wish to travel on a higher-tier bus, you can upgrade it in 'Booking History'. The system calculates the fare difference, which you can pay digitally. Your ticket is updated instantly."
   },
   {
-    question: "What is my Wallet?",
-    answer: "The wallet holds your balance from refunds (from both manual cancellations and expired tickets). You can use this balance to pay for new tickets. You can also add funds to your wallet by redeeming refund codes provided by conductors."
+    question: "What if I have no mobile network while boarding?",
+    answer: "Your ticket details are stored locally in your browser. Simply open your 'Booking History' to show the conductor your Ticket Code and Security PIN. An active internet connection is not required for verification once the ticket is booked."
   },
   {
-    question: "I received a refund code. How do I use it?",
-    answer: "Go to the 'My Wallet' section. Enter the refund code along with the original ticket's 5-digit security code to add the credited amount to your wallet balance."
+    question: "Is the digital payment secure?",
+    answer: "Yes. BusConnect uses a secure, simulated payment gateway that mimics industry-standard encryption. Your transactions are safe, and your sensitive data is never stored in plain text."
+  },
+  {
+    question: "Can I book a ticket for someone else?",
+    answer: "Yes! You can book a ticket on your device and share the 10-digit Ticket Code and 5-digit Security PIN with the person travelling. The conductor will use these codes to verify their journey."
   },
 ];
 
