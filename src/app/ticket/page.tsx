@@ -6,12 +6,14 @@ import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, AlertCircle, History } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/app/components/header';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
+import { cn } from '@/lib/utils';
 
 type Ticket = {
   from: string;
@@ -81,6 +83,13 @@ function TicketContent() {
     }
     
     if (parsedTicket) {
+        // Calculate dynamic expiry if still valid in data
+        if (parsedTicket.status === 'valid') {
+            const expiry = new Date(parsedTicket.createdAt).getTime() + 60000;
+            if (new Date().getTime() > expiry) {
+                parsedTicket.status = 'expired';
+            }
+        }
         setTicket(parsedTicket);
     }
     setLoading(false);
@@ -110,18 +119,54 @@ function TicketContent() {
 
   const issueDate = new Date(ticket.createdAt);
   const expiryTimestamp = issueDate.getTime() + 60 * 1000;
-  const isCurrentlyExpired = new Date().getTime() > expiryTimestamp;
+  const isCurrentlyExpired = ticket.status === 'expired' || new Date().getTime() > expiryTimestamp;
   const canShowUpgrade = ticket.status === 'valid' && !isCurrentlyExpired && ticket.busType !== 'deluxe';
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
+  // If ticket is USED, show the realistic physical ticket
+  if (ticket.status === 'used') {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 md:p-8 space-y-6">
+            <div className="text-center space-y-2">
+                <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-bold">
+                    <History className="h-4 w-4" />
+                    TICKET USED & VALIDATED
+                </div>
+                <p className="text-sm text-muted-foreground">This is your digital receipt for the journey.</p>
+            </div>
+            <GeneratedTicket ticket={ticket as any} />
+            <Button asChild variant="outline" className="w-full max-w-sm">
+                <Link href="/select-bus-type">Book Next Journey</Link>
+            </Button>
+        </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 md:p-8">
-      <Card className="w-full max-w-md overflow-hidden shadow-xl border-t-8 border-t-primary">
+      <Card className={cn(
+        "w-full max-w-md overflow-hidden shadow-xl border-t-8 transition-all",
+        ticket.status === 'valid' ? "border-t-primary" : 
+        ticket.status === 'cancelled' ? "border-t-destructive" : 
+        "border-t-yellow-500"
+      )}>
         <CardHeader className="bg-white text-primary text-center p-6 border-b">
           <div className="flex items-center justify-center gap-2">
             <TicketIcon className="h-7 w-7" />
             <CardTitle className="font-headline text-2xl font-bold uppercase tracking-tight">Your Digital Ticket</CardTitle>
           </div>
+          {ticket.status === 'cancelled' && (
+              <div className="mt-4 flex items-center justify-center gap-2 bg-destructive/10 text-destructive p-2 rounded font-bold text-sm">
+                  <XCircle className="h-4 w-4" />
+                  CANCELLED
+              </div>
+          )}
+          {ticket.status === 'expired' && (
+              <div className="mt-4 flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 p-2 rounded font-bold text-sm">
+                  <Clock className="h-4 w-4" />
+                  EXPIRED
+              </div>
+          )}
         </CardHeader>
         <CardContent className="p-6 space-y-6 bg-white">
           <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10">
@@ -185,9 +230,7 @@ function TicketContent() {
             <p className="font-mono text-xl font-bold tracking-widest break-all">{ticket.ticketCode}</p>
           </div>
 
-          {ticket.status === 'cancelled' ? (
-              <div className="text-center text-destructive border-2 border-dashed border-destructive p-4 rounded-lg bg-destructive/5 font-bold">TICKET VOIDED</div>
-          ) : (
+          {ticket.status === 'valid' && !isCurrentlyExpired ? (
               <div className="space-y-4">
                 <CountdownTimer expiryTimestamp={expiryTimestamp} />
                 {canShowUpgrade && (
@@ -197,6 +240,16 @@ function TicketContent() {
                     </Link>
                   </Button>
                 )}
+              </div>
+          ) : ticket.status === 'cancelled' ? (
+              <div className="text-center p-4 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg">
+                  <p className="text-destructive font-bold">TICKET VOIDED</p>
+                  <p className="text-xs text-muted-foreground mt-1">Amount has been refunded to your wallet.</p>
+              </div>
+          ) : (
+              <div className="text-center p-4 bg-yellow-500/5 border-2 border-dashed border-yellow-500/20 rounded-lg">
+                  <p className="text-yellow-600 font-bold uppercase">Ticket Expired</p>
+                  <p className="text-xs text-muted-foreground mt-1">This ticket is no longer valid for travel.</p>
               </div>
           )}
         </CardContent>
