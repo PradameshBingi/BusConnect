@@ -6,7 +6,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import Header from '@/app/components/header';
-import { HelpCircle, User, Briefcase } from "lucide-react";
+import { HelpCircle, User, Briefcase, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const passengerFaqs = [
@@ -67,14 +67,56 @@ const conductorFaqs = [
   },
 ];
 
+const howItWorksSteps = [
+  {
+    title: "Book",
+    description: "Select your route and bus type. Pay via UPI, Cards, or Wallet.",
+  },
+  {
+    title: "Secure",
+    description: "A 5-digit Security PIN is generated for your ticket to prevent fraud.",
+  },
+  {
+    title: "Verify",
+    description: "Show your unique Ticket Code to the conductor. They will verify it on their device using your PIN.",
+  },
+  {
+    title: "Refunds",
+    description: "If you change buses or cancel, credits are added to your wallet for future use.",
+  },
+];
+
 export default function HelpPage() {
   return (
     <>
       <Header showBackButton={true} backHref="/" title="Help & FAQs" />
       <div className="p-4 md:p-8 max-w-3xl mx-auto space-y-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-2">
           <HelpCircle className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold font-headline">Help & FAQs</h1>
+        </div>
+
+        {/* How It Works Section */}
+        <div className="space-y-4">
+          <h2 className="flex items-center gap-2 text-xl font-bold text-primary">
+            <Zap className="h-5 w-5 fill-primary" />
+            How It Works
+          </h2>
+          <Card className="bg-slate-50/50 border-slate-200 shadow-sm">
+            <CardContent className="p-6 space-y-5">
+              {howItWorksSteps.map((step, index) => (
+                <div key={index} className="flex gap-4 items-start">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white font-bold text-xs">
+                    {index + 1}
+                  </div>
+                  <p className="text-sm leading-relaxed text-slate-700">
+                    <span className="font-bold text-slate-900">{step.title}: </span>
+                    {step.description}
+                  </p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
 
         <Card>
