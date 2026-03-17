@@ -98,18 +98,18 @@ export default function HelpPage() {
 
         {/* How It Works Section */}
         <div className="space-y-4">
-          <h2 className="flex items-center gap-2 text-xl font-bold text-primary">
-            <Zap className="h-5 w-5 fill-primary" />
-            How It Works
-          </h2>
-          <Card className="bg-slate-50/50 border-slate-200 shadow-sm">
-            <CardContent className="p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <Zap className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-bold text-primary font-headline">How It Works</h2>
+          </div>
+          <Card className="bg-slate-50/50 border-slate-200 shadow-sm rounded-xl">
+            <CardContent className="p-6 space-y-6">
               {howItWorksSteps.map((step, index) => (
-                <div key={index} className="flex gap-4 items-start">
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white font-bold text-xs">
+                <div key={index} className="flex gap-4 items-center">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white font-bold text-sm">
                     {index + 1}
                   </div>
-                  <p className="text-sm leading-relaxed text-slate-700">
+                  <p className="text-[15px] leading-relaxed text-slate-700 font-body">
                     <span className="font-bold text-slate-900">{step.title}: </span>
                     {step.description}
                   </p>
@@ -121,8 +121,8 @@ export default function HelpPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User />
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <User className="h-6 w-6" />
               For Passengers
             </CardTitle>
           </CardHeader>
@@ -130,8 +130,8 @@ export default function HelpPage() {
             <Accordion type="single" collapsible className="w-full">
               {passengerFaqs.map((faq, index) => (
                 <AccordionItem value={`p-item-${index}`} key={index}>
-                  <AccordionTrigger className="text-left font-semibold">{faq.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionTrigger className="text-left font-semibold font-body">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground font-body">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
@@ -142,8 +142,8 @@ export default function HelpPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase />
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <Briefcase className="h-6 w-6" />
               For Conductors
             </CardTitle>
           </CardHeader>
@@ -151,8 +151,8 @@ export default function HelpPage() {
             <Accordion type="single" collapsible className="w-full">
               {conductorFaqs.map((faq, index) => (
                 <AccordionItem value={`c-item-${index}`} key={index}>
-                  <AccordionTrigger className="text-left font-semibold">{faq.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionTrigger className="text-left font-semibold font-body">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground font-body">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
