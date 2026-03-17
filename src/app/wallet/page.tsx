@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,6 +10,7 @@ import { Tag, Gift, History, ArrowDown, ArrowUp, CreditCard } from 'lucide-react
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { SimulatedPayment } from '@/components/simulated-payment';
 
 type Refund = {
   code: string;
@@ -40,6 +42,7 @@ export default function WalletPage() {
   const [refundCode, setRefundCode] = useState('');
   const [securityCode, setSecurityCode] = useState('');
   const [addAmount, setAddAmount] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
 
@@ -125,7 +128,7 @@ export default function WalletPage() {
     }
   };
 
-  const handleAddMoney = () => {
+  const initiateAddMoney = () => {
     const amount = parseFloat(addAmount);
     if(isNaN(amount)) {
         toast({variant: 'destructive', title: 'Invalid Amount', description: 'Please enter a valid amount.'});
@@ -159,6 +162,11 @@ export default function WalletPage() {
       return;
     }
     
+    setShowPayment(true);
+  };
+
+  const finalizeAddMoney = () => {
+    const amount = parseFloat(addAmount);
     try {
         let walletData: Wallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "refunds":[], "transactions":[]}');
         
@@ -166,7 +174,7 @@ export default function WalletPage() {
         walletData.transactions = walletData.transactions || [];
         walletData.transactions.push({
             type: 'credit',
-            description: `Added via UPI`,
+            description: `Added via Online Payment`,
             amount: amount,
             date: new Date().toISOString(),
         });
@@ -190,7 +198,7 @@ export default function WalletPage() {
             description: 'Could not add money to your wallet.',
         });
     }
-  }
+  };
 
   if (!isClient) return null;
 
@@ -220,7 +228,7 @@ export default function WalletPage() {
                 Add Money to Wallet
               </CardTitle>
               <CardDescription>
-                Add balance using UPI (Min Rs. 50, Max Rs. 2000).
+                Add balance using Digital Payment (Min Rs. 50, Max Rs. 2000).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -241,7 +249,7 @@ export default function WalletPage() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className='w-full' onClick={handleAddMoney}>Pay with UPI</Button>
+                <Button className='w-full' onClick={initiateAddMoney}>Add Funds</Button>
             </CardFooter>
           </Card>
 
@@ -320,6 +328,13 @@ export default function WalletPage() {
             </Card>
         </div>
       </div>
+
+      <SimulatedPayment 
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        onComplete={finalizeAddMoney}
+        amount={parseFloat(addAmount) || 0}
+      />
     </>
   );
 }

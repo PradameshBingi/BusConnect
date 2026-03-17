@@ -144,7 +144,7 @@ export function GeneratedTicket({ ticket, refundCode }: GeneratedTicketProps) {
 
                 <div className="border-t border-dashed border-gray-400 my-1"></div>
 
-                <p className="text-2xl font-bold my-2">Total ₹ {ticket.totalFare.toFixed(2)}</p>
+                <p className="text-2xl font-bold my-2">Total Rs. {ticket.totalFare.toFixed(2)}</p>
                 <p className="text-sm">Payment Mode: {ticket.paymentMode || "DIGITAL"}</p>
                 
                 <div className="text-xs text-left my-3 grid grid-cols-2">

@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { calculateFare } from '@/lib/fare-calculator';
 import { Switch } from '@/components/ui/switch';
+import { SimulatedPayment } from '@/components/simulated-payment';
 
 const ManIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -58,6 +59,7 @@ export function BookingForm() {
   const [securityCode, setSecurityCode] = useState('');
   const [totalFare, setTotalFare] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -107,7 +109,7 @@ export function BookingForm() {
     });
   };
 
-  const handleBooking = (e: React.FormEvent) => {
+  const initiateBooking = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!from || !to) {
@@ -130,6 +132,14 @@ export function BookingForm() {
       return;
     }
 
+    if (finalFare > 0) {
+      setShowPayment(true);
+    } else {
+      finalizeBooking();
+    }
+  };
+
+  const finalizeBooking = () => {
     setIsLoading(true);
 
     try {
@@ -190,112 +200,121 @@ export function BookingForm() {
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="bg-primary text-primary-foreground text-center p-6">
-        <div className="flex items-center justify-center gap-2">
-            <BusFront className="h-7 w-7" />
-            <CardTitle className="font-headline text-2xl">Book Your Digital Ticket</CardTitle>
-        </div>
-      </CardHeader>
-      <form onSubmit={handleBooking}>
-        <CardContent className="space-y-6 pt-6">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 space-y-1">
-              <label htmlFor="from-location" className="text-sm font-medium">From</label>
-              <Select value={from} onValueChange={setFrom} required>
-                <SelectTrigger id="from-location">
-                  <SelectValue placeholder="Select from" />
-                </SelectTrigger>
-                <SelectContent>
-                  {hyderabadLocalities.map((loc) => (
-                    <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="button" variant="ghost" size="icon" className="mt-6 shrink-0" onClick={handleSwap}>
-              <ArrowRightLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex-1 space-y-1">
-              <label htmlFor="to-location" className="text-sm font-medium">To</label>
-              <Select value={to} onValueChange={setTo} required>
-                <SelectTrigger id="to-location">
-                  <SelectValue placeholder="Select to" />
-                </SelectTrigger>
-                <SelectContent>
-                  {hyderabadLocalities.map((loc) => (
-                     <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    <>
+      <Card className="w-full max-w-md">
+        <CardHeader className="bg-primary text-primary-foreground text-center p-6">
+          <div className="flex items-center justify-center gap-2">
+              <BusFront className="h-7 w-7" />
+              <CardTitle className="font-headline text-2xl">Book Your Digital Ticket</CardTitle>
           </div>
-
-          <div>
-             <Label className="text-sm font-medium mb-2 block">Passengers</Label>
-              <div className="space-y-2">
-                {passengerMeta.map(({ type, icon }) => (
-                  <div key={type} className="flex items-center justify-between rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-3">
-                      {icon}
-                      <span className="font-medium">{type}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, -1)}>
-                        <MinusCircle className="h-4 w-4" />
-                      </Button>
-                      <span className="text-lg font-bold w-6 text-center">{quantities[type]}</span>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, 1)}>
-                        <PlusCircle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+        </CardHeader>
+        <form onSubmit={initiateBooking}>
+          <CardContent className="space-y-6 pt-6">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 space-y-1">
+                <label htmlFor="from-location" className="text-sm font-medium">From</label>
+                <Select value={from} onValueChange={setFrom} required>
+                  <SelectTrigger id="from-location">
+                    <SelectValue placeholder="Select from" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hyderabadLocalities.map((loc) => (
+                      <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-          </div>
-          
-          {walletBalance > 0 && (
+              <Button type="button" variant="ghost" size="icon" className="mt-6 shrink-0" onClick={handleSwap}>
+                <ArrowRightLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1 space-y-1">
+                <label htmlFor="to-location" className="text-sm font-medium">To</label>
+                <Select value={to} onValueChange={setTo} required>
+                  <SelectTrigger id="to-location">
+                    <SelectValue placeholder="Select to" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hyderabadLocalities.map((loc) => (
+                       <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div>
-                <Label className="text-sm font-medium mb-2 block">Use Wallet Balance</Label>
-                <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-                    <div className="flex items-center gap-3">
-                        <Wallet className="h-6 w-6 text-primary" />
-                        <div>
-                            <span className="font-medium">Available Balance</span>
-                            <p className="text-sm text-muted-foreground">Rs. {walletBalance.toFixed(2)}</p>
-                        </div>
+               <Label className="text-sm font-medium mb-2 block">Passengers</Label>
+                <div className="space-y-2">
+                  {passengerMeta.map(({ type, icon }) => (
+                    <div key={type} className="flex items-center justify-between rounded-lg border bg-card p-3">
+                      <div className="flex items-center gap-3">
+                        {icon}
+                        <span className="font-medium">{type}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, -1)}>
+                          <MinusCircle className="h-4 w-4" />
+                        </Button>
+                        <span className="text-lg font-bold w-6 text-center">{quantities[type]}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, 1)}>
+                          <PlusCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <Switch checked={useWallet} onCheckedChange={setUseWallet} />
+                  ))}
                 </div>
             </div>
-          )}
-
-          <div>
-            <Label htmlFor="security-code" className="text-sm font-medium">Passenger Security Code</Label>
-            <Input
-              id="security-code"
-              placeholder="5-digit alphanumeric code"
-              value={securityCode}
-              onChange={(e) => setSecurityCode(e.target.value.toUpperCase())}
-              maxLength={5}
-              required
-              className="mt-1"
-            />
-          </div>
-
-           <div className="flex justify-between items-center rounded-lg bg-muted p-3">
-              <span className="font-medium">Total Fare:</span>
-              <span className="text-2xl font-bold">Rs. {finalFare}</span>
-            </div>
-        </CardContent>
-        <CardFooter>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Generating...' : (
-              <><Ticket className="mr-2 h-4 w-4" /> {finalFare > 0 ? `Pay Rs. ${finalFare} & Generate` : 'Generate Ticket'}</>
+            
+            {walletBalance > 0 && (
+              <div>
+                  <Label className="text-sm font-medium mb-2 block">Use Wallet Balance</Label>
+                  <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+                      <div className="flex items-center gap-3">
+                          <Wallet className="h-6 w-6 text-primary" />
+                          <div>
+                              <span className="font-medium">Available Balance</span>
+                              <p className="text-sm text-muted-foreground">Rs. {walletBalance.toFixed(2)}</p>
+                          </div>
+                      </div>
+                      <Switch checked={useWallet} onCheckedChange={setUseWallet} />
+                  </div>
+              </div>
             )}
-          </Button>
-        </CardFooter>
-      </form>
-    </Card>
+
+            <div>
+              <Label htmlFor="security-code" className="text-sm font-medium">Passenger Security Code</Label>
+              <Input
+                id="security-code"
+                placeholder="5-digit alphanumeric code"
+                value={securityCode}
+                onChange={(e) => setSecurityCode(e.target.value.toUpperCase())}
+                maxLength={5}
+                required
+                className="mt-1"
+              />
+            </div>
+
+             <div className="flex justify-between items-center rounded-lg bg-muted p-3">
+                <span className="font-medium">Total Fare:</span>
+                <span className="text-2xl font-bold">Rs. {finalFare}</span>
+              </div>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Generating...' : (
+                <><Ticket className="mr-2 h-4 w-4" /> {finalFare > 0 ? `Pay Rs. ${finalFare} & Generate` : 'Generate Ticket'}</>
+              )}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+
+      <SimulatedPayment 
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        onComplete={finalizeBooking}
+        amount={finalFare}
+      />
+    </>
   );
 }
