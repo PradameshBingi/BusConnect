@@ -104,11 +104,11 @@ export default function HelpPage() {
           <Card className="bg-slate-50/50 border-slate-200 shadow-sm rounded-xl">
             <CardContent className="p-4 space-y-2">
               {howItWorksSteps.map((step, index) => (
-                <div key={index} className="flex gap-3 items-center">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-white font-bold text-[10px]">
+                <div key={index} className="flex gap-3 items-start">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-white font-bold text-[10px] mt-0.5">
                     {index + 1}
                   </div>
-                  <p className="text-[13px] leading-tight text-slate-700 font-body">
+                  <p className="text-sm leading-snug text-slate-700 font-body">
                     <span className="font-bold text-slate-900">{step.title}: </span>
                     {step.description}
                   </p>
