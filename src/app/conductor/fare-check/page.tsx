@@ -63,6 +63,8 @@ export default function FareCheckPage() {
   
   const renderTicketDetailsView = (ticket: TicketDetails, refundCodeGenerated?: string) => {
     const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
+    const busLabel = ticket.status === 'used' ? 'Boarded Bus' : 'Booked Bus';
+    
     return (
         <div className='space-y-4'>
             <Separator/>
@@ -107,7 +109,7 @@ export default function FareCheckPage() {
                 <div className="flex items-center gap-2">
                     <Bus className="h-4 w-4 text-muted-foreground"/>
                     <div>
-                        <p className="font-semibold text-[10px] uppercase">Boarded Bus</p>
+                        <p className="font-semibold text-[10px] uppercase">{busLabel}</p>
                         <p className="text-muted-foreground font-bold">{getFullBusType(ticket.busType)}</p>
                     </div>
                 </div>
@@ -412,11 +414,20 @@ export default function FareCheckPage() {
                                         )}
                                     </div>
                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <Bus className="h-4 w-4 text-muted-foreground"/>
-                                      <div>
-                                          <p className="font-semibold text-[10px] uppercase">Booked Bus</p>
-                                          <p className="text-muted-foreground font-bold">{getFullBusType(ticketDetails.busType)}</p>
+                                  <div className="flex flex-col gap-2">
+                                      <div className="flex items-center gap-2 opacity-60">
+                                          <Bus className="h-3.5 w-3.5" />
+                                          <div>
+                                              <p className="font-semibold text-[9px] uppercase">Booked Bus</p>
+                                              <p className="font-bold text-xs">{getFullBusType(ticketDetails.busType)}</p>
+                                          </div>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-primary">
+                                          <Bus className="h-3.5 w-3.5" />
+                                          <div>
+                                              <p className="font-semibold text-[9px] uppercase">Boarded Bus</p>
+                                              <p className="font-bold text-xs">{getFullBusType(actualBusType as BusType)}</p>
+                                          </div>
                                       </div>
                                   </div>
                               </div>
