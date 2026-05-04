@@ -61,8 +61,15 @@ const Ticket = mongoose.model("Ticket", ticketSchema);
 app.post("/create-ticket", async (req, res) => {
   try {
     const data = req.body;
+    
+    // Backend generates the ticket code
+    const routeNo = data.routeNo || '00';
+    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
+    const ticketCode = `TKT-${routeNo}-${randomSuffix}`;
+
     const ticket = new Ticket({
       ...data,
+      ticketCode: ticketCode,
       createdAt: new Date(),
       status: "valid"
     });
@@ -86,9 +93,9 @@ app.get("/verify-ticket/:code", async (req, res) => {
       return res.json({ status: "invalid" });
     }
 
-    // Auto-expiry logic (1 minute for demo)
+    // Auto-expiry logic (10 minutes for digital tickets)
     const now = new Date();
-    const expiryTime = new Date(ticket.createdAt.getTime() + 60000);
+    const expiryTime = new Date(ticket.createdAt.getTime() + 600000);
     
     if (ticket.status === "valid" && now > expiryTime) {
       ticket.status = "expired";

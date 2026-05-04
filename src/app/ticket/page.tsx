@@ -7,7 +7,6 @@ import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, History, Loader2, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/app/components/header';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,7 @@ function TicketContent() {
 
     const fetchTicket = async () => {
         try {
-            const response = await fetch(API_ENDPOINTS.VERIFY(id));
+            const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             if (!response.ok) throw new Error("Server communication error.");
             
             const result = await response.json();
@@ -68,7 +67,7 @@ function TicketContent() {
             }
         } catch (err: any) {
             console.error(err);
-            setError('Could not connect to the ticketing server.');
+            setError(err.message || 'Could not connect to the ticketing server.');
         } finally {
             setLoading(false);
         }
@@ -114,7 +113,7 @@ function TicketContent() {
   );
 
   const issueDate = new Date(ticket.createdAt);
-  const expiryTimestamp = issueDate.getTime() + 60 * 1000;
+  const expiryTimestamp = issueDate.getTime() + 60 * 1000 * 10; // 10 minute window for digital tickets
   const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const canShowUpgrade = ticket.status === 'valid' && !isCurrentlyExpired && ticket.busType !== 'deluxe';
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
@@ -262,7 +261,7 @@ export default function TicketPage() {
   return (
     <>
       <Header showBackButton={true} backHref="/select-ticket-type" title="Ticket Details" />
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading ticket...</div>}>
         <TicketContent />
       </Suspense>
     </>

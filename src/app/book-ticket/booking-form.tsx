@@ -148,7 +148,6 @@ export function BookingForm() {
 
       if (!fromLocality || !toLocality) throw new Error("Invalid location selection.");
 
-      const ticketCode = `TKT-${fromLocality.routeNumber}-${Math.floor(10000 + Math.random() * 90000)}`;
       const passengerSummary = Object.entries(quantities)
         .filter(([, count]) => count > 0)
         .map(([type, count]) => `${type}: ${count}`)
@@ -166,13 +165,11 @@ export function BookingForm() {
         totalFare: totalFare,
         fare: finalFare,
         walletAmountUsed: walletAmountUsed,
-        ticketCode: ticketCode,
         securityCode: securityCode,
         busType: busType,
       };
       
       const controller = new AbortController();
-      // Increase timeout to 60 seconds for Render hibernation
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch(API_ENDPOINTS.CREATE, {
@@ -184,11 +181,10 @@ export function BookingForm() {
         body: JSON.stringify(newTicket),
         signal: controller.signal
       }).catch(err => {
-        // Specifically catch TypeError / AbortError which is usually "Failed to fetch"
         if (err.name === 'AbortError') {
           throw new Error("Connection timed out. The server is taking too long to respond—it might be waking up.");
         }
-        throw new Error("Could not connect to the ticketing server. Please ensure you are online and try again in a moment.");
+        throw new Error("Could not connect to the ticketing server: " + err.message);
       });
 
       clearTimeout(timeoutId);
@@ -199,7 +195,9 @@ export function BookingForm() {
       }
       
       const result = await response.json();
+      const ticketCode = result.ticket.ticketCode;
 
+      // Update local storage for history purposes (but validation uses the database)
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
@@ -207,7 +205,6 @@ export function BookingForm() {
       if (useWallet && walletAmountUsed > 0) {
           const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
           storedWallet.balance -= walletAmountUsed;
-          storedWallet.transactions = storedWallet.transactions || [];
           storedWallet.transactions.push({
               type: 'debit',
               description: `Ticket booking ${ticketCode}`,

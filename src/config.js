@@ -1,0 +1,1 @@
+export const BASE_URL = "https://5000-firebase-busconnect2-1772532304408.cluster-va5f6x3wzzh4stde63ddr3qgge.cloudworkstations.dev";
