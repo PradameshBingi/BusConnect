@@ -171,18 +171,27 @@ export function BookingForm() {
         busType: busType,
       };
       
-      console.log("Attempting to create ticket via API:", API_ENDPOINTS.CREATE);
-
-      // Defend against hibernation - use a controller with a timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      // Increase timeout to 60 seconds for Render hibernation
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(newTicket),
         signal: controller.signal
-      }).finally(() => clearTimeout(timeoutId));
+      }).catch(err => {
+        // Specifically catch TypeError / AbortError which is usually "Failed to fetch"
+        if (err.name === 'AbortError') {
+          throw new Error("Connection timed out. The server is taking too long to respond—it might be waking up.");
+        }
+        throw new Error("Could not connect to the ticketing server. Please ensure you are online and try again in a moment.");
+      });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -191,12 +200,10 @@ export function BookingForm() {
       
       const result = await response.json();
 
-      // Local storage only for personal history view
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
 
-      // Update local wallet if used
       if (useWallet && walletAmountUsed > 0) {
           const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
           storedWallet.balance -= walletAmountUsed;
@@ -214,14 +221,10 @@ export function BookingForm() {
 
     } catch (error: any) {
        console.error("Booking error details:", error);
-       let message = error.message;
-       if (message === "Failed to fetch") {
-           message = "Could not connect to the ticketing server. The server might be waking up—please try again in a few seconds.";
-       }
        toast({ 
          variant: 'destructive', 
-         title: 'Booking Failed', 
-         description: message
+         title: 'Booking Error', 
+         description: error.message
        });
        setIsLoading(false);
     }
