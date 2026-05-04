@@ -170,8 +170,10 @@ export function BookingForm() {
       };
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
-
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      
+      console.log("🚀 Attempting fetch to:", API_ENDPOINTS.CREATE);
+      
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
         headers: { 
@@ -181,10 +183,11 @@ export function BookingForm() {
         body: JSON.stringify(newTicket),
         signal: controller.signal
       }).catch(err => {
+        console.error("❌ Fetch failed:", err);
         if (err.name === 'AbortError') {
           throw new Error("Connection timed out. The server is taking too long to respond—it might be waking up.");
         }
-        throw new Error("Could not connect to the ticketing server: " + err.message);
+        throw new Error("Could not connect to the ticketing server. Please ensure the backend is running and the URL in api-config.ts is correct.");
       });
 
       clearTimeout(timeoutId);
@@ -197,7 +200,7 @@ export function BookingForm() {
       const result = await response.json();
       const ticketCode = result.ticket.ticketCode;
 
-      // Update local storage for history purposes (but validation uses the database)
+      // Update local storage for history purposes
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
@@ -223,6 +226,7 @@ export function BookingForm() {
          title: 'Booking Error', 
          description: error.message
        });
+    } finally {
        setIsLoading(false);
     }
   };
