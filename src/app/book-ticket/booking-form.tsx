@@ -168,7 +168,7 @@ export function BookingForm() {
         busType,
       };
 
-      console.log("🚀 Attempting API Call to:", API_ENDPOINTS.CREATE);
+      console.log("🚀 API URL:", API_ENDPOINTS.CREATE);
       
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
@@ -177,14 +177,11 @@ export function BookingForm() {
           'Accept': 'application/json'
         },
         body: JSON.stringify(newTicket),
-      }).catch(err => {
-        console.error("Fetch Network Error:", err);
-        throw new Error("Network connection failed. Please ensure the backend server is running on port 5000 and the URL is accessible.");
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server responded with ${response.status}: ${response.statusText}`);
+        throw new Error(errorData.error || `Server error (${response.status})`);
       }
       
       const result = await response.json();
@@ -210,12 +207,12 @@ export function BookingForm() {
       router.push(`/ticket?id=${ticketCode}`);
 
     } catch (error: any) {
-       console.error("Booking detailed error:", error);
-       setNetworkError(error.message);
+       console.error("Booking error details:", error);
+       setNetworkError(error.message || "Network connection failed");
        toast({ 
          variant: 'destructive', 
          title: 'Booking Failed', 
-         description: error.message
+         description: error.message || "Please ensure the backend server is running."
        });
     } finally {
        setIsLoading(false);
@@ -236,9 +233,9 @@ export function BookingForm() {
             {networkError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Error</AlertTitle>
+                <AlertTitle>Connection Failed</AlertTitle>
                 <AlertDescription>
-                  {networkError}. Verify the server is running on port 5000 and publicly exposed.
+                  {networkError}. Ensure backend server is running on port 5000 and is publicly accessible.
                 </AlertDescription>
               </Alert>
             )}
