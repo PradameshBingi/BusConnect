@@ -8,8 +8,12 @@ export async function GET(
   try {
     await dbConnect();
     const { code } = await params;
-    const ticketCode = code.toUpperCase();
     
+    if (!code) {
+      return NextResponse.json({ error: "Missing ticket code" }, { status: 400 });
+    }
+
+    const ticketCode = code.toUpperCase();
     console.log("🔎 API Route Verifying Ticket:", ticketCode);
 
     const ticket = await Ticket.findOne({ ticketCode });
@@ -19,7 +23,8 @@ export async function GET(
 
     // Check expiry (10 minutes)
     const now = new Date();
-    const expiryTime = new Date(ticket.createdAt.getTime() + 600000);
+    const createdAt = new Date(ticket.createdAt);
+    const expiryTime = new Date(createdAt.getTime() + 600000);
 
     if (ticket.status === "valid" && now > expiryTime) {
       ticket.status = "expired";
@@ -30,6 +35,9 @@ export async function GET(
     return NextResponse.json({ status: ticket.status, ticket });
   } catch (err: any) {
     console.error("❌ API Route Verify Error:", err);
-    return NextResponse.json({ error: "Connection issue" }, { status: 500 });
+    return NextResponse.json({ 
+      error: err.message || "Database connection error",
+      details: "Check your MongoDB connection and IP whitelist."
+    }, { status: 500 });
   }
 }

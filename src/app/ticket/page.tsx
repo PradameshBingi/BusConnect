@@ -48,7 +48,6 @@ function TicketContent() {
   };
 
   useEffect(() => {
-    // 1. Prevent early fetch if ID is missing from URL
     if (!id) {
         setLoading(false);
         return;
@@ -59,19 +58,19 @@ function TicketContent() {
             console.log("🔎 Fetching ticket from API:", `${API_ENDPOINTS.VERIFY}/${id}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             
-            // 2. Handle specific status codes
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
                 if (response.status === 404) {
-                    throw new Error("Ticket not found");
+                    throw new Error("Ticket not found in database.");
                 }
-                throw new Error("Connection issue");
+                throw new Error(errorData.error || `Server returned ${response.status}`);
             }
             
             const result = await response.json();
             setTicket(result.ticket);
         } catch (err: any) {
-            console.error(err);
-            setError(err.message || 'Connection issue');
+            console.error("Fetch Ticket Error:", err);
+            setError(err.message || 'Network connection failed');
         } finally {
             setLoading(false);
         }
@@ -90,7 +89,6 @@ function TicketContent() {
     }
   };
 
-  // If no ID is provided in URL, show nothing or a friendly message
   if (!id) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 text-center">
@@ -111,7 +109,7 @@ function TicketContent() {
       <Card className="w-full max-w-md">
         <CardContent className="p-10 flex flex-col items-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground font-medium">Validating Ticket ID...</p>
+            <p className="text-muted-foreground font-medium">Retrieving Ticket Data...</p>
         </CardContent>
       </Card>
     </div>
@@ -122,7 +120,7 @@ function TicketContent() {
       <Card className="w-full max-w-md">
           <CardContent className="p-10 flex flex-col items-center gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-bold">Ticket Error</h2>
+            <h2 className="text-xl font-bold">Verification Error</h2>
             <p className="text-muted-foreground">{error}</p>
             <Button asChild variant="outline" className="mt-4">
                 <Link href="/select-ticket-type">Return to Home</Link>
@@ -133,7 +131,7 @@ function TicketContent() {
   );
 
   const issueDate = new Date(ticket.createdAt);
-  const expiryTimestamp = issueDate.getTime() + 60 * 1000 * 10; // 10 minute window for digital tickets
+  const expiryTimestamp = issueDate.getTime() + 60 * 1000 * 10;
   const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const canShowUpgrade = ticket.status === 'valid' && !isCurrentlyExpired && ticket.busType !== 'deluxe';
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
@@ -281,7 +279,7 @@ export default function TicketPage() {
   return (
     <>
       <Header showBackButton={true} backHref="/select-ticket-type" title="Ticket Details" />
-      <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading ticket...</div>}>
+      <Suspense fallback={<div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
         <TicketContent />
       </Suspense>
     </>
