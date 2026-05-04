@@ -1,5 +1,6 @@
 // Central API Configuration
-export const BASE_URL = "https://busconnect-server-q8f6.onrender.com"; // Use the actual production backend URL
+// Ensure this matches your actual deployed backend URL
+export const BASE_URL = "https://busconnect-server-q8f6.onrender.com"; 
 
 export const API_ENDPOINTS = {
   CREATE: `${BASE_URL}/create-ticket`,

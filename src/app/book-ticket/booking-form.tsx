@@ -171,18 +171,27 @@ export function BookingForm() {
         busType: busType,
       };
       
-      // POST TO BACKEND
+      console.log("Attempting to create ticket via API:", API_ENDPOINTS.CREATE);
+
+      // Defend against hibernation - use a controller with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTicket),
-      });
+        signal: controller.signal
+      }).finally(() => clearTimeout(timeoutId));
 
-      if (!response.ok) throw new Error("Server failed to create ticket.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Server failed to create ticket. Status: " + response.status);
+      }
       
       const result = await response.json();
 
-      // Local storage only for personal history view, not for source of truth
+      // Local storage only for personal history view
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
@@ -204,7 +213,16 @@ export function BookingForm() {
       router.push(`/ticket?id=${ticketCode}`);
 
     } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Booking Failed', description: error.message || 'Could not generate ticket.' });
+       console.error("Booking error details:", error);
+       let message = error.message;
+       if (message === "Failed to fetch") {
+           message = "Could not connect to the ticketing server. The server might be waking up—please try again in a few seconds.";
+       }
+       toast({ 
+         variant: 'destructive', 
+         title: 'Booking Failed', 
+         description: message
+       });
        setIsLoading(false);
     }
   };
