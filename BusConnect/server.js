@@ -1,4 +1,4 @@
-console.log(">>> SERVER INITIALIZING");
+console.log(">>> BUSCONNECT SERVER INITIALIZING");
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -7,12 +7,13 @@ const cors = require("cors");
 const app = express();
 
 /* =========================
-   🔥 STRONG CORS FIX
+   🔥 ROBUST CORS FOR DEV
 ========================= */
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept"],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -21,7 +22,8 @@ app.use(express.json());
    🔍 REQUEST LOGGER
 ========================= */
 app.use((req, res, next) => {
-  console.log(`📡 ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log(`📡 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (req.method === 'POST') console.log("📦 Body:", req.body);
   next();
 });
 
@@ -31,11 +33,14 @@ app.use((req, res, next) => {
 const MONGO_URL = "mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/BusConnect?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URL)
-.then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.error("❌ MongoDB Error:", err.message));
+  .then(() => console.log("✅ MongoDB Connected Successfully"))
+  .catch(err => {
+    console.error("❌ MongoDB Connection Error:", err.message);
+    process.exit(1);
+  });
 
 /* =========================
-   📦 SCHEMA
+   📦 TICKET SCHEMA
 ========================= */
 const ticketSchema = new mongoose.Schema({
   ticketCode: { type: String, unique: true, required: true },
@@ -57,7 +62,7 @@ const ticketSchema = new mongoose.Schema({
 const Ticket = mongoose.model("Ticket", ticketSchema);
 
 /* =========================
-   🎫 CREATE TICKET
+   🎫 API: CREATE TICKET
 ========================= */
 app.post("/api/create-ticket", async (req, res) => {
   try {
@@ -74,7 +79,7 @@ app.post("/api/create-ticket", async (req, res) => {
     });
 
     await ticket.save();
-    console.log("✅ Ticket saved:", ticketCode);
+    console.log("✨ Ticket Created:", ticketCode);
     res.status(201).json({ status: "created", ticket });
   } catch (err) {
     console.error("❌ Create Ticket Error:", err);
@@ -83,25 +88,26 @@ app.post("/api/create-ticket", async (req, res) => {
 });
 
 /* =========================
-   🔍 VERIFY TICKET
+   🔍 API: VERIFY TICKET
 ========================= */
 app.get("/api/verify-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    console.log("🔎 Verifying:", code);
+    console.log("🔎 Verifying Ticket:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
     if (!ticket) {
-      return res.json({ status: "invalid" });
+      return res.status(404).json({ status: "invalid", message: "Ticket not found" });
     }
 
-    // ⏱ Expiry (10 minutes)
+    // Auto-expire after 10 minutes
     const now = new Date();
-    const expiry = new Date(ticket.createdAt.getTime() + 600000);
+    const expiryTime = new Date(ticket.createdAt.getTime() + 600000);
 
-    if (ticket.status === "valid" && now > expiry) {
+    if (ticket.status === "valid" && now > expiryTime) {
       ticket.status = "expired";
       await ticket.save();
+      console.log("⏰ Ticket Expired:", code);
     }
 
     res.json({ status: ticket.status, ticket });
@@ -112,28 +118,34 @@ app.get("/api/verify-ticket/:code", async (req, res) => {
 });
 
 /* =========================
-   ✅ USE TICKET
+   ✅ API: USE TICKET
 ========================= */
 app.post("/api/use-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    console.log("🧾 Using ticket:", code);
+    console.log("🧾 Validating Ticket:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
     if (!ticket) return res.status(404).json({ status: "invalid" });
 
     if (ticket.status === "used") {
-      return res.json({ status: "already_used", ticket });
+      return res.status(400).json({ status: "already_used", message: "Ticket already validated" });
+    }
+
+    if (ticket.status === "expired" || ticket.status === "cancelled") {
+      return res.status(400).json({ status: ticket.status, message: `Ticket is ${ticket.status}` });
     }
 
     ticket.status = "used";
     ticket.validatedAt = new Date();
 
+    // Allow updating fare details during validation (e.g., fare adjustment)
     if (req.body.busType) ticket.busType = req.body.busType;
     if (req.body.totalFare) ticket.totalFare = req.body.totalFare;
     if (req.body.fare) ticket.fare = req.body.fare;
 
     await ticket.save();
+    console.log("✅ Ticket marked as USED:", code);
     res.json({ status: "updated", ticket });
   } catch (err) {
     console.error("❌ Use Ticket Error:", err);
@@ -142,10 +154,14 @@ app.post("/api/use-ticket/:code", async (req, res) => {
 });
 
 /* =========================
-   🌐 ROOT
+   🌐 ROOT & HEALTH CHECK
 ========================= */
 app.get("/", (req, res) => {
-  res.send("BusConnect Server Running - API OK");
+  res.send("BusConnect API Server - ONLINE");
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", database: mongoose.connection.readyState === 1 ? "connected" : "disconnected" });
 });
 
 /* =========================
@@ -153,5 +169,7 @@ app.get("/", (req, res) => {
 ========================= */
 const PORT = 5000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`\n🚀 BusConnect Backend is running!`);
+  console.log(`📡 Listening at http://0.0.0.0:${PORT}`);
+  console.log(`🔒 CORS enabled for all origins\n`);
 });

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2 } from 'lucide-react';
+import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,7 @@ import { calculateFare } from '@/lib/fare-calculator';
 import { Switch } from '@/components/ui/switch';
 import { SimulatedPayment } from '@/components/simulated-payment';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const ManIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -60,6 +61,7 @@ export function BookingForm() {
   const [totalFare, setTotalFare] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [networkError, setNetworkError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -111,6 +113,7 @@ export function BookingForm() {
 
   const initiateBooking = (e: React.FormEvent) => {
     e.preventDefault();
+    setNetworkError(null);
     
     if (!from || !to) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select both locations.' });
@@ -141,35 +144,31 @@ export function BookingForm() {
 
   const finalizeBooking = async () => {
     setIsLoading(true);
+    setNetworkError(null);
 
     try {
-      const fromLocality = hyderabadLocalities.find(l => l.name === from);
-      const toLocality = hyderabadLocalities.find(l => l.name === to);
-
-      if (!fromLocality || !toLocality) throw new Error("Invalid location selection.");
+      const busType = searchParams.get('type') || 'ordinary';
+      const walletAmountUsed = useWallet ? Math.min(totalFare, walletBalance) : 0;
 
       const passengerSummary = Object.entries(quantities)
         .filter(([, count]) => count > 0)
         .map(([type, count]) => `${type}: ${count}`)
         .join(', ');
 
-      const busType = searchParams.get('type') || 'ordinary';
-      const walletAmountUsed = useWallet ? Math.min(totalFare, walletBalance) : 0;
-
       const newTicket = {
-        from: from,
-        to: to,
-        routeNo: fromLocality.routeNumber,
+        from,
+        to,
+        routeNo: hyderabadLocalities.find(l => l.name === from)?.routeNumber || "00",
         passengers: passengerSummary || 'None',
-        quantities: quantities,
-        totalFare: totalFare,
+        quantities,
+        totalFare,
         fare: finalFare,
-        walletAmountUsed: walletAmountUsed,
-        securityCode: securityCode,
-        busType: busType,
+        walletAmountUsed,
+        securityCode,
+        busType,
       };
 
-      console.log("🚀 API URL:", API_ENDPOINTS.CREATE);
+      console.log("🚀 Attempting API Call to:", API_ENDPOINTS.CREATE);
       
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
@@ -178,17 +177,20 @@ export function BookingForm() {
           'Accept': 'application/json'
         },
         body: JSON.stringify(newTicket),
+      }).catch(err => {
+        console.error("Fetch Network Error:", err);
+        throw new Error("Network connection failed. Please ensure the backend server is running and reachable.");
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Server failed to create ticket.");
+        throw new Error(errorData.error || `Server responded with ${response.status}: ${response.statusText}`);
       }
       
       const result = await response.json();
       const ticketCode = result.ticket.ticketCode;
 
-      // Update local history
+      // Update local storage for history purposes
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
@@ -208,10 +210,11 @@ export function BookingForm() {
       router.push(`/ticket?id=${ticketCode}`);
 
     } catch (error: any) {
-       console.error("Booking error details:", error);
+       console.error("Booking detailed error:", error);
+       setNetworkError(error.message);
        toast({ 
          variant: 'destructive', 
-         title: 'Booking Error', 
+         title: 'Booking Failed', 
          description: error.message
        });
     } finally {
@@ -230,6 +233,16 @@ export function BookingForm() {
         </CardHeader>
         <form onSubmit={initiateBooking}>
           <CardContent className="space-y-6 pt-6">
+            {networkError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Connection Error</AlertTitle>
+                <AlertDescription>
+                  {networkError}. Make sure the backend server (BusConnect/server.js) is running on port 5000.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex items-center gap-2">
               <div className="flex-1 space-y-1">
                 <label htmlFor="from-location" className="text-sm font-medium">From</label>
