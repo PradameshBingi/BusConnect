@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,6 +43,7 @@ export default function BookingHistoryPage() {
 
   useEffect(() => {
     setIsClient(true);
+    // Keep local records for quick browsing, but specific ticket view will fetch from server
     const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
     setTickets(storedTickets.reverse());
   }, []);
@@ -97,7 +97,7 @@ export default function BookingHistoryPage() {
           <h1 className="text-2xl font-bold font-headline">Booking History</h1>
         </div>
         {tickets.length === 0 ? (
-          <Card><CardContent className="p-6 text-center">No history yet.</CardContent></Card>
+          <Card><CardContent className="p-6 text-center">No local booking history found.</CardContent></Card>
         ) : (
           <div className="space-y-4">
             {tickets.map(ticket => {
@@ -135,11 +135,8 @@ export default function BookingHistoryPage() {
                             {(ticket.walletAmountUsed || 0) > 0 ? (
                                 <p className="text-[10px] text-primary flex items-center gap-1 font-medium">
                                     <Wallet className="h-3 w-3" /> Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}
-                                    {ticket.fare > 0 ? ` + Paid: Rs. ${ticket.fare.toFixed(2)}` : ''}
                                 </p>
-                            ) : (
-                                <p className="text-[10px] text-muted-foreground italic">Paid: Rs. {ticket.fare.toFixed(2)}</p>
-                            )}
+                            ) : null}
                         </div>
                         <Badge variant="outline">{getFullBusType(ticket.busType)}</Badge>
                      </div>

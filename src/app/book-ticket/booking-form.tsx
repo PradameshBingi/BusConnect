@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet } from 'lucide-react';
+import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { calculateFare } from '@/lib/fare-calculator';
 import { Switch } from '@/components/ui/switch';
 import { SimulatedPayment } from '@/components/simulated-payment';
+import { API_ENDPOINTS } from '@/lib/api-config';
 
 const ManIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -139,7 +139,7 @@ export function BookingForm() {
     }
   };
 
-  const finalizeBooking = () => {
+  const finalizeBooking = async () => {
     setIsLoading(true);
 
     try {
@@ -168,15 +168,26 @@ export function BookingForm() {
         walletAmountUsed: walletAmountUsed,
         ticketCode: ticketCode,
         securityCode: securityCode,
-        status: 'valid' as const,
-        createdAt: new Date().toISOString(),
         busType: busType,
       };
       
+      // POST TO BACKEND
+      const response = await fetch(API_ENDPOINTS.CREATE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTicket),
+      });
+
+      if (!response.ok) throw new Error("Server failed to create ticket.");
+      
+      const result = await response.json();
+
+      // Local storage only for personal history view, not for source of truth
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-      existingTickets.push(newTicket);
+      existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
 
+      // Update local wallet if used
       if (useWallet && walletAmountUsed > 0) {
           const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
           storedWallet.balance -= walletAmountUsed;
@@ -190,8 +201,7 @@ export function BookingForm() {
           localStorage.setItem('userWallet', JSON.stringify(storedWallet));
       }
 
-      const encodedData = btoa(JSON.stringify(newTicket));
-      router.push(`/ticket?id=${ticketCode}&data=${encodedData}`);
+      router.push(`/ticket?id=${ticketCode}`);
 
     } catch (error: any) {
        toast({ variant: 'destructive', title: 'Booking Failed', description: error.message || 'Could not generate ticket.' });
@@ -301,7 +311,7 @@ export function BookingForm() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Generating...' : (
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                 <><Ticket className="mr-2 h-4 w-4" /> {finalFare > 0 ? `Pay Rs. ${finalFare} & Generate` : 'Generate Ticket'}</>
               )}
             </Button>

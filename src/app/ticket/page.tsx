@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -6,7 +5,7 @@ import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, AlertCircle, History } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, History, Loader2, AlertTriangle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import Header from '@/app/components/header';
@@ -14,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { cn } from '@/lib/utils';
+import { API_ENDPOINTS } from '@/lib/api-config';
 
 type Ticket = {
   from: string;
@@ -55,45 +55,27 @@ function TicketContent() {
         return;
     }
 
-    let parsedTicket: Ticket | undefined;
-    const ticketData = searchParams.get('data');
-    if (ticketData) {
-      try {
-        const decodedData = atob(ticketData);
-        parsedTicket = JSON.parse(decodedData) as Ticket;
-      } catch (err) {
-        setError('Failed to read ticket data.');
-        setLoading(false);
-        return;
-      }
-    } else {
-      try {
-          const storedTickets: Ticket[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-          parsedTicket = storedTickets.find(t => t.ticketCode === id);
-          if (!parsedTicket) {
-               setError('Ticket data not found.');
-               setLoading(false);
-               return;
-          }
-      } catch (e) {
-          setError('Could not retrieve ticket.');
-          setLoading(false);
-          return;
-      }
-    }
-    
-    if (parsedTicket) {
-        // Calculate dynamic expiry if still valid in data
-        if (parsedTicket.status === 'valid') {
-            const expiry = new Date(parsedTicket.createdAt).getTime() + 60000;
-            if (new Date().getTime() > expiry) {
-                parsedTicket.status = 'expired';
+    const fetchTicket = async () => {
+        try {
+            const response = await fetch(API_ENDPOINTS.VERIFY(id));
+            if (!response.ok) throw new Error("Server communication error.");
+            
+            const result = await response.json();
+            if (result.status === 'invalid') {
+                setError('Ticket not found in the official system.');
+            } else {
+                setTicket(result.ticket);
             }
+        } catch (err: any) {
+            console.error(err);
+            setError('Could not connect to the ticketing server.');
+        } finally {
+            setLoading(false);
         }
-        setTicket(parsedTicket);
-    }
-    setLoading(false);
-  }, [id, searchParams]);
+    };
+
+    fetchTicket();
+  }, [id]);
   
   const handleCopy = (text: string, fieldName: string) => {
     if (navigator.clipboard) {
@@ -107,23 +89,36 @@ function TicketContent() {
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4">
-      <Card className="w-full max-w-md"><CardContent className="p-6 space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-40 w-full" /></CardContent></Card>
+      <Card className="w-full max-w-md">
+        <CardContent className="p-10 flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="text-muted-foreground font-medium">Fetching ticket from server...</p>
+        </CardContent>
+      </Card>
     </div>
   );
 
   if (error || !ticket) return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4">
-      <Card className="w-full max-w-md"><CardContent className="p-6 text-center">{error || 'Ticket not found.'}</CardContent></Card>
+    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 text-center">
+      <Card className="w-full max-w-md">
+          <CardContent className="p-10 flex flex-col items-center gap-4">
+            <AlertTriangle className="h-12 w-12 text-destructive" />
+            <h2 className="text-xl font-bold">Ticket Access Error</h2>
+            <p className="text-muted-foreground">{error || 'The requested ticket could not be retrieved.'}</p>
+            <Button asChild variant="outline" className="mt-4">
+                <Link href="/select-ticket-type">Return to Home</Link>
+            </Button>
+          </CardContent>
+      </Card>
     </div>
   );
 
   const issueDate = new Date(ticket.createdAt);
   const expiryTimestamp = issueDate.getTime() + 60 * 1000;
-  const isCurrentlyExpired = ticket.status === 'expired' || new Date().getTime() > expiryTimestamp;
+  const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const canShowUpgrade = ticket.status === 'valid' && !isCurrentlyExpired && ticket.busType !== 'deluxe';
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
-  // If ticket is USED, show the realistic physical ticket
   if (ticket.status === 'used') {
     return (
         <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 md:p-8 space-y-6">
@@ -161,7 +156,7 @@ function TicketContent() {
                   CANCELLED
               </div>
           )}
-          {ticket.status === 'expired' && (
+          {isCurrentlyExpired && (
               <div className="mt-4 flex items-center justify-center gap-2 bg-yellow-100 text-yellow-700 p-2 rounded font-bold text-sm">
                   <Clock className="h-4 w-4" />
                   EXPIRED
