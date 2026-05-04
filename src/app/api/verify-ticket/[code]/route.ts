@@ -30,6 +30,6 @@ export async function GET(
     return NextResponse.json({ status: ticket.status, ticket });
   } catch (err: any) {
     console.error("❌ API Route Verify Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: "Connection issue" }, { status: 500 });
   }
 }

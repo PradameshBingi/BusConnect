@@ -48,27 +48,30 @@ function TicketContent() {
   };
 
   useEffect(() => {
+    // 1. Prevent early fetch if ID is missing from URL
     if (!id) {
         setLoading(false);
-        setError('No ticket ID provided.');
         return;
     }
 
     const fetchTicket = async () => {
         try {
-            console.log("🔎 Fetching ticket from API Route:", `${API_ENDPOINTS.VERIFY}/${id}`);
+            console.log("🔎 Fetching ticket from API:", `${API_ENDPOINTS.VERIFY}/${id}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             
+            // 2. Handle specific status codes
             if (!response.ok) {
-                if (response.status === 404) throw new Error("Ticket not found in the official system.");
-                throw new Error("Server communication error.");
+                if (response.status === 404) {
+                    throw new Error("Ticket not found");
+                }
+                throw new Error("Connection issue");
             }
             
             const result = await response.json();
             setTicket(result.ticket);
         } catch (err: any) {
             console.error(err);
-            setError(err.message || 'Could not connect to the ticketing server.');
+            setError(err.message || 'Connection issue');
         } finally {
             setLoading(false);
         }
@@ -87,12 +90,28 @@ function TicketContent() {
     }
   };
 
+  // If no ID is provided in URL, show nothing or a friendly message
+  if (!id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4 text-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-10">
+            <p className="text-muted-foreground">Please book a ticket to view details.</p>
+            <Button asChild variant="outline" className="mt-4">
+                <Link href="/select-ticket-type">Start Booking</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] bg-muted/40 p-4">
       <Card className="w-full max-w-md">
         <CardContent className="p-10 flex flex-col items-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground font-medium">Fetching ticket from server...</p>
+            <p className="text-muted-foreground font-medium">Validating Ticket ID...</p>
         </CardContent>
       </Card>
     </div>
@@ -103,8 +122,8 @@ function TicketContent() {
       <Card className="w-full max-w-md">
           <CardContent className="p-10 flex flex-col items-center gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-bold">Ticket Access Error</h2>
-            <p className="text-muted-foreground">{error || 'The requested ticket could not be retrieved.'}</p>
+            <h2 className="text-xl font-bold">Ticket Error</h2>
+            <p className="text-muted-foreground">{error}</p>
             <Button asChild variant="outline" className="mt-4">
                 <Link href="/select-ticket-type">Return to Home</Link>
             </Button>
