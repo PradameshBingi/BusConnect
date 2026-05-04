@@ -7,7 +7,7 @@ const cors = require("cors");
 const app = express();
 
 /* =========================
-   🔥 STRONG CORS FIX (REAL FIX)
+   🔥 STRONG CORS FIX
 ========================= */
 app.use(cors({
   origin: "*",
@@ -15,30 +15,22 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// 🔥 HANDLE PREFLIGHT REQUESTS (IMPORTANT)
-//app.options("*", cors());
-
 app.use(express.json());
 
 /* =========================
-   🔍 REQUEST LOGGER (DEBUG)
+   🔍 REQUEST LOGGER
 ========================= */
 app.use((req, res, next) => {
   console.log(`📡 ${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-console.log("Express, Mongoose, CORS configured");
-
 /* =========================
    🔗 MONGODB CONNECTION
 ========================= */
 const MONGO_URL = "mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/BusConnect?retryWrites=true&w=majority";
 
-mongoose.connect(MONGO_URL, {
-  serverSelectionTimeoutMS: 20000,
-  connectTimeoutMS: 20000,
-})
+mongoose.connect(MONGO_URL)
 .then(() => console.log("✅ MongoDB Connected"))
 .catch(err => console.error("❌ MongoDB Error:", err.message));
 
@@ -67,12 +59,9 @@ const Ticket = mongoose.model("Ticket", ticketSchema);
 /* =========================
    🎫 CREATE TICKET
 ========================= */
-app.post("/create-ticket", async (req, res) => {
+app.post("/api/create-ticket", async (req, res) => {
   try {
-    console.log("➡️ Incoming ticket request:", req.body);
-
     const data = req.body;
-
     const routeNo = data.routeNo || "00";
     const randomSuffix = Math.floor(10000 + Math.random() * 90000);
     const ticketCode = `TKT-${routeNo}-${randomSuffix}`;
@@ -85,11 +74,8 @@ app.post("/create-ticket", async (req, res) => {
     });
 
     await ticket.save();
-
     console.log("✅ Ticket saved:", ticketCode);
-
     res.status(201).json({ status: "created", ticket });
-
   } catch (err) {
     console.error("❌ Create Ticket Error:", err);
     res.status(500).json({ error: err.message });
@@ -99,14 +85,12 @@ app.post("/create-ticket", async (req, res) => {
 /* =========================
    🔍 VERIFY TICKET
 ========================= */
-app.get("/verify-ticket/:code", async (req, res) => {
+app.get("/api/verify-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-
     console.log("🔎 Verifying:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
-
     if (!ticket) {
       return res.json({ status: "invalid" });
     }
@@ -121,7 +105,6 @@ app.get("/verify-ticket/:code", async (req, res) => {
     }
 
     res.json({ status: ticket.status, ticket });
-
   } catch (err) {
     console.error("❌ Verify Error:", err);
     res.status(500).json({ error: err.message });
@@ -131,14 +114,12 @@ app.get("/verify-ticket/:code", async (req, res) => {
 /* =========================
    ✅ USE TICKET
 ========================= */
-app.post("/use-ticket/:code", async (req, res) => {
+app.post("/api/use-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-
     console.log("🧾 Using ticket:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
-
     if (!ticket) return res.status(404).json({ status: "invalid" });
 
     if (ticket.status === "used") {
@@ -148,10 +129,12 @@ app.post("/use-ticket/:code", async (req, res) => {
     ticket.status = "used";
     ticket.validatedAt = new Date();
 
+    if (req.body.busType) ticket.busType = req.body.busType;
+    if (req.body.totalFare) ticket.totalFare = req.body.totalFare;
+    if (req.body.fare) ticket.fare = req.body.fare;
+
     await ticket.save();
-
     res.json({ status: "updated", ticket });
-
   } catch (err) {
     console.error("❌ Use Ticket Error:", err);
     res.status(500).json({ error: err.message });
@@ -162,14 +145,13 @@ app.post("/use-ticket/:code", async (req, res) => {
    🌐 ROOT
 ========================= */
 app.get("/", (req, res) => {
-  res.send("BusConnect Server Running - Status OK");
+  res.send("BusConnect Server Running - API OK");
 });
 
 /* =========================
    🚀 START SERVER
 ========================= */
-const PORT = process.env.PORT || 5000;
-
+const PORT = 5000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

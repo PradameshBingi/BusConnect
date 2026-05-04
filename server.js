@@ -5,39 +5,36 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
-
+app.listen(5000, "0.0.0.0", () => {
+  console.log("Server running on port 5000");
+});
 /* =========================
-   🔥 PERMISSIVE CORS SETUP
+   🔥 CORS (FIXED)
 ========================= */
-// Simple, permissive CORS for development in Cloud Workstations
-app.use(cors());
-
-// Handle preflight requests for all routes
-app.options("*", cors());
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type"]
+}));
 
 app.use(express.json());
 
 /* =========================
-   🔍 REQUEST LOGGER (DEBUG)
+   🔍 REQUEST LOGGER
 ========================= */
 app.use((req, res, next) => {
   console.log(`📡 ${new Date().toISOString()} - ${req.method} ${req.url}`);
-  if (req.method === 'POST') {
-    console.log('📦 Payload:', JSON.stringify(req.body));
-  }
   next();
 });
 
-console.log("Express, Mongoose, CORS configured");
-
 /* =========================
-   🔗 MONGODB CONNECTION
+   🔗 MONGODB
 ========================= */
 const MONGO_URL = "mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/BusConnect?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URL)
 .then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.error("❌ MongoDB Error:", err.message));
+.catch(err => console.error("❌ MongoDB Error:", err));
 
 /* =========================
    📦 SCHEMA
@@ -64,14 +61,13 @@ const Ticket = mongoose.model("Ticket", ticketSchema);
 /* =========================
    🎫 CREATE TICKET
 ========================= */
-app.post("/create-ticket", async (req, res) => {
+app.post("/api/create-ticket", async (req, res) => {
   try {
-    console.log("➡️ Incoming ticket request:", req.body);
-
     const data = req.body;
+
     const routeNo = data.routeNo || "00";
-    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-    const ticketCode = `TKT-${routeNo}-${randomSuffix}`;
+    const random = Math.floor(10000 + Math.random() * 90000);
+    const ticketCode = `TKT-${routeNo}-${random}`;
 
     const ticket = new Ticket({
       ...data,
@@ -81,11 +77,13 @@ app.post("/create-ticket", async (req, res) => {
     });
 
     await ticket.save();
+
     console.log("✅ Ticket saved:", ticketCode);
 
     res.status(201).json({ status: "created", ticket });
+
   } catch (err) {
-    console.error("❌ Create Ticket Error:", err);
+    console.error("❌ Create Ticket Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -93,10 +91,9 @@ app.post("/create-ticket", async (req, res) => {
 /* =========================
    🔍 VERIFY TICKET
 ========================= */
-app.get("/verify-ticket/:code", async (req, res) => {
+app.get("/api/verify-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    console.log("🔎 Verifying:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
 
@@ -104,7 +101,7 @@ app.get("/verify-ticket/:code", async (req, res) => {
       return res.json({ status: "invalid" });
     }
 
-    // ⏱ Expiry (10 minutes)
+    // expiry (10 min)
     const now = new Date();
     const expiry = new Date(ticket.createdAt.getTime() + 600000);
 
@@ -114,8 +111,9 @@ app.get("/verify-ticket/:code", async (req, res) => {
     }
 
     res.json({ status: ticket.status, ticket });
+
   } catch (err) {
-    console.error("❌ Verify Error:", err);
+    console.error("❌ Verify Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -123,10 +121,9 @@ app.get("/verify-ticket/:code", async (req, res) => {
 /* =========================
    ✅ USE TICKET
 ========================= */
-app.post("/use-ticket/:code", async (req, res) => {
+app.post("/api/use-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    console.log("🧾 Using ticket:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
 
@@ -138,11 +135,13 @@ app.post("/use-ticket/:code", async (req, res) => {
 
     ticket.status = "used";
     ticket.validatedAt = new Date();
+
     await ticket.save();
 
     res.json({ status: "updated", ticket });
+
   } catch (err) {
-    console.error("❌ Use Ticket Error:", err);
+    console.error("❌ Use Ticket Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -151,13 +150,14 @@ app.post("/use-ticket/:code", async (req, res) => {
    🌐 ROOT
 ========================= */
 app.get("/", (req, res) => {
-  res.send("BusConnect Server Running - Status OK");
+  res.send("BusConnect Server Running - API OK");
 });
 
 /* =========================
-   🚀 START SERVER
+   🚀 START
 ========================= */
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

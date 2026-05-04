@@ -168,11 +168,8 @@ export function BookingForm() {
         securityCode: securityCode,
         busType: busType,
       };
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
-      
-      console.log("🚀 Attempting fetch to:", API_ENDPOINTS.CREATE);
+
+      console.log("🚀 API URL:", API_ENDPOINTS.CREATE);
       
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
@@ -181,26 +178,17 @@ export function BookingForm() {
           'Accept': 'application/json'
         },
         body: JSON.stringify(newTicket),
-        signal: controller.signal
-      }).catch(err => {
-        console.error("❌ Fetch failed:", err);
-        if (err.name === 'AbortError') {
-          throw new Error("Connection timed out. The server is taking too long to respond—it might be waking up.");
-        }
-        throw new Error("Could not connect to the ticketing server. Please ensure the backend is running and the URL in api-config.ts is correct.");
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Server failed to create ticket. Status: " + response.status);
+        throw new Error(errorData.error || "Server failed to create ticket.");
       }
       
       const result = await response.json();
       const ticketCode = result.ticket.ticketCode;
 
-      // Update local storage for history purposes
+      // Update local history
       const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       existingTickets.push(result.ticket);
       localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));

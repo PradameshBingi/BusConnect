@@ -1,0 +1,20 @@
+console.log("Server file started...");
+
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// 🔗 PUT YOUR REAL CONNECTION STRING HERE
+mongoose.connect("mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/?appName=Cluster0") 
+.then(() => console.log("MongoDB Connected"))
+.catch(err => console.log("Error:", err));
+
+app.get("/", (req, res) => {
+  res.send("BusConnect Server Running");
+});
+
+app.listen(5000, () => console.log("Server running on port 5000"));
