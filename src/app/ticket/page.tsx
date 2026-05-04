@@ -56,7 +56,7 @@ function TicketContent() {
 
     const fetchTicket = async () => {
         try {
-            console.log("🔎 Fetching ticket from:", `${API_ENDPOINTS.VERIFY}/${id}`);
+            console.log("🔎 Fetching ticket from API Route:", `${API_ENDPOINTS.VERIFY}/${id}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             
             if (!response.ok) {

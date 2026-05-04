@@ -98,7 +98,7 @@ export default function VerifyTicketPage() {
         setStatus('idle');
         
         try {
-            console.log("🔎 Fetching from:", `${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
+            console.log("🔎 Fetching from API Route:", `${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
             
             if (!response.ok) {

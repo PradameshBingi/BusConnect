@@ -168,13 +168,12 @@ export function BookingForm() {
         busType,
       };
 
-      console.log("🚀 API URL:", API_ENDPOINTS.CREATE);
+      console.log("🚀 Calling API Route:", API_ENDPOINTS.CREATE);
       
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(newTicket),
       });
@@ -212,7 +211,7 @@ export function BookingForm() {
        toast({ 
          variant: 'destructive', 
          title: 'Booking Failed', 
-         description: error.message || "Please ensure the backend server is running."
+         description: error.message || "Please check your internet connection."
        });
     } finally {
        setIsLoading(false);
@@ -233,9 +232,9 @@ export function BookingForm() {
             {networkError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Connection Failed</AlertTitle>
+                <AlertTitle>Network Error</AlertTitle>
                 <AlertDescription>
-                  {networkError}. Ensure backend server is running on port 5000 and is publicly accessible.
+                  {networkError}. If this persists, please try refreshing the page.
                 </AlertDescription>
               </Alert>
             )}

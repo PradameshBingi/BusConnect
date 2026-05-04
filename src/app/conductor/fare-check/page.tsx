@@ -10,7 +10,6 @@ import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { calculateFare } from '@/lib/fare-calculator';
 import { Separator } from '@/components/ui/separator';
-import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
 type BusType = 'ordinary' | 'express' | 'deluxe';
@@ -65,7 +64,7 @@ export default function FareCheckPage() {
     setRefundCode('');
 
     try {
-        const response = await fetch(API_ENDPOINTS.VERIFY(ticketCode.trim()));
+        const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
         if (!response.ok) throw new Error("Server error");
         
         const result = await response.json();
@@ -99,7 +98,7 @@ export default function FareCheckPage() {
     const actualFare = calculateFare(ticketDetails.from, ticketDetails.to, ticketDetails.quantities, actualBusType);
 
     try {
-        const response = await fetch(API_ENDPOINTS.USE(ticketDetails.ticketCode), {
+        const response = await fetch(`${API_ENDPOINTS.USE}/${ticketDetails.ticketCode}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -112,11 +111,9 @@ export default function FareCheckPage() {
         if (!response.ok) throw new Error("Validation failed");
         const result = await response.json();
 
-        // Handle local refund logic if needed
         if (fareDifference < 0) {
             const newRefundCode = `REF-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
             setRefundCode(newRefundCode);
-            // In a real system, the backend would generate and store this
         }
 
         setStatus('validated');

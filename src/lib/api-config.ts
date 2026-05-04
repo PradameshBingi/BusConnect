@@ -1,12 +1,10 @@
 /**
  * Centralized API Configuration
- * Use this as the single source of truth for all backend communication.
+ * Using relative paths to Next.js API routes to avoid CORS and network issues.
  */
 
-export const BASE_URL = "https://5000-firebase-busconnect2-1772532304408.cluster-va5f6x3wzzh4stde63ddr3qgge.cloudworkstations.dev";
-
 export const API_ENDPOINTS = {
-  CREATE: `${BASE_URL}/api/create-ticket`,
-  VERIFY: `${BASE_URL}/api/verify-ticket`,
-  USE: `${BASE_URL}/api/use-ticket`
+  CREATE: "/api/create-ticket",
+  VERIFY: "/api/verify-ticket", // Use as `${API_ENDPOINTS.VERIFY}/${code}`
+  USE: "/api/use-ticket"        // Use as `${API_ENDPOINTS.USE}/${code}`
 };
