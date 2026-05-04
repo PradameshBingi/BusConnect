@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect, { Ticket } from '@/lib/mongodb';
+import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
 export async function POST(
   request: Request,
@@ -7,11 +7,12 @@ export async function POST(
 ) {
   try {
     await dbConnect();
+    const Ticket = getTicketModel();
     const { code } = await params;
     const ticketCode = code.toUpperCase();
     const updateData = await request.json().catch(() => ({}));
     
-    console.log("🧾 API Route Validating Ticket Action:", ticketCode);
+    console.log("🧾 Validating Ticket Action:", ticketCode);
 
     const ticket = await Ticket.findOne({ ticketCode });
     if (!ticket) return NextResponse.json({ status: "invalid" }, { status: 404 });
@@ -32,11 +33,11 @@ export async function POST(
     if (updateData.fare) ticket.fare = updateData.fare;
 
     await ticket.save();
-    console.log("✅ Ticket marked as USED via API Route:", ticketCode);
+    console.log("✅ Ticket marked as USED:", ticketCode);
     
     return NextResponse.json({ status: "updated", ticket });
   } catch (err: any) {
-    console.error("❌ API Route Use Ticket Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ API Use Ticket Error:", err);
+    return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
 }

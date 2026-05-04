@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import dbConnect, { Ticket } from '@/lib/mongodb';
+import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
 export async function POST(request: Request) {
   try {
     await dbConnect();
+    const Ticket = getTicketModel();
     const data = await request.json();
     
     const routeNo = data.routeNo || "00";
@@ -18,11 +19,14 @@ export async function POST(request: Request) {
     });
 
     await ticket.save();
-    console.log("✨ Ticket Created via API Route:", ticketCode);
+    console.log("✨ Ticket Created successfully:", ticketCode);
     
     return NextResponse.json({ status: "created", ticket }, { status: 201 });
   } catch (err: any) {
-    console.error("❌ API Route Create Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("❌ API Create Error:", err);
+    return NextResponse.json({ 
+      error: err.message || "Failed to create ticket",
+      details: err.stack
+    }, { status: 500 });
   }
 }

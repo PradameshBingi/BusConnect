@@ -55,22 +55,30 @@ function TicketContent() {
 
     const fetchTicket = async () => {
         try {
-            console.log("🔎 Fetching ticket from API:", `${API_ENDPOINTS.VERIFY}/${id}`);
+            console.log("🔎 Fetching ticket from database:", id);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             
+            // Check if response is JSON
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Non-JSON response received:", text);
+                throw new Error(`Server returned non-JSON response (${response.status}). The API route might have crashed.`);
+            }
+
+            const result = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
                 if (response.status === 404) {
                     throw new Error("Ticket not found in database.");
                 }
-                throw new Error(errorData.error || `Server returned ${response.status}`);
+                throw new Error(result.error || `Server Error (${response.status})`);
             }
             
-            const result = await response.json();
             setTicket(result.ticket);
         } catch (err: any) {
             console.error("Fetch Ticket Error:", err);
-            setError(err.message || 'Network connection failed');
+            setError(err.message || 'Connection to ticketing system failed');
         } finally {
             setLoading(false);
         }
@@ -120,8 +128,16 @@ function TicketContent() {
       <Card className="w-full max-w-md">
           <CardContent className="p-10 flex flex-col items-center gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-bold">Verification Error</h2>
-            <p className="text-muted-foreground">{error}</p>
+            <h2 className="text-xl font-bold">System Connection Issue</h2>
+            <p className="text-muted-foreground text-sm">{error}</p>
+            <div className="bg-muted p-3 rounded text-[10px] text-left w-full overflow-auto max-h-32">
+                <p className="font-bold mb-1">Troubleshooting Tips:</p>
+                <ul className="list-disc ml-4 space-y-1">
+                    <li>Ensure your MongoDB database is active.</li>
+                    <li>Check if your environment's IP is whitelisted in MongoDB Atlas.</li>
+                    <li>Verify the ticket ID in the URL is correct.</li>
+                </ul>
+            </div>
             <Button asChild variant="outline" className="mt-4">
                 <Link href="/select-ticket-type">Return to Home</Link>
             </Button>
