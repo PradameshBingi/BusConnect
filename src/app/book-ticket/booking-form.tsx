@@ -179,7 +179,7 @@ export function BookingForm() {
         body: JSON.stringify(newTicket),
       }).catch(err => {
         console.error("Fetch Network Error:", err);
-        throw new Error("Network connection failed. Please ensure the backend server is running and reachable.");
+        throw new Error("Network connection failed. Please ensure the backend server is running on port 5000 and the URL is accessible.");
       });
 
       if (!response.ok) {
@@ -238,7 +238,7 @@ export function BookingForm() {
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Connection Error</AlertTitle>
                 <AlertDescription>
-                  {networkError}. Make sure the backend server (BusConnect/server.js) is running on port 5000.
+                  {networkError}. Verify the server is running on port 5000 and publicly exposed.
                 </AlertDescription>
               </Alert>
             )}

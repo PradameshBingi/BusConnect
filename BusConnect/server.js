@@ -7,7 +7,7 @@ const cors = require("cors");
 const app = express();
 
 /* =========================
-   🔥 ROBUST CORS FOR DEV
+   🔥 ROBUST CORS FOR WORKSTATIONS
 ========================= */
 app.use(cors({
   origin: "*",
@@ -79,7 +79,7 @@ app.post("/api/create-ticket", async (req, res) => {
     });
 
     await ticket.save();
-    console.log("✨ Ticket Created:", ticketCode);
+    console.log("✨ Ticket Created in DB:", ticketCode);
     res.status(201).json({ status: "created", ticket });
   } catch (err) {
     console.error("❌ Create Ticket Error:", err);
@@ -100,7 +100,7 @@ app.get("/api/verify-ticket/:code", async (req, res) => {
       return res.status(404).json({ status: "invalid", message: "Ticket not found" });
     }
 
-    // Auto-expire after 10 minutes
+    // Check expiry (10 minutes for this demo)
     const now = new Date();
     const expiryTime = new Date(ticket.createdAt.getTime() + 600000);
 
@@ -123,7 +123,7 @@ app.get("/api/verify-ticket/:code", async (req, res) => {
 app.post("/api/use-ticket/:code", async (req, res) => {
   try {
     const code = req.params.code.toUpperCase();
-    console.log("🧾 Validating Ticket:", code);
+    console.log("🧾 Validating Ticket Action:", code);
 
     const ticket = await Ticket.findOne({ ticketCode: code });
     if (!ticket) return res.status(404).json({ status: "invalid" });
@@ -139,13 +139,12 @@ app.post("/api/use-ticket/:code", async (req, res) => {
     ticket.status = "used";
     ticket.validatedAt = new Date();
 
-    // Allow updating fare details during validation (e.g., fare adjustment)
     if (req.body.busType) ticket.busType = req.body.busType;
     if (req.body.totalFare) ticket.totalFare = req.body.totalFare;
     if (req.body.fare) ticket.fare = req.body.fare;
 
     await ticket.save();
-    console.log("✅ Ticket marked as USED:", code);
+    console.log("✅ Ticket marked as USED in DB:", code);
     res.json({ status: "updated", ticket });
   } catch (err) {
     console.error("❌ Use Ticket Error:", err);
@@ -157,7 +156,7 @@ app.post("/api/use-ticket/:code", async (req, res) => {
    🌐 ROOT & HEALTH CHECK
 ========================= */
 app.get("/", (req, res) => {
-  res.send("BusConnect API Server - ONLINE");
+  res.send("BusConnect API Server - ONLINE on Port 5000");
 });
 
 app.get("/api/health", (req, res) => {

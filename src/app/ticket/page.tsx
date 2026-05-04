@@ -56,15 +56,16 @@ function TicketContent() {
 
     const fetchTicket = async () => {
         try {
+            console.log("🔎 Fetching ticket from:", `${API_ENDPOINTS.VERIFY}/${id}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
-            if (!response.ok) throw new Error("Server communication error.");
+            
+            if (!response.ok) {
+                if (response.status === 404) throw new Error("Ticket not found in the official system.");
+                throw new Error("Server communication error.");
+            }
             
             const result = await response.json();
-            if (result.status === 'invalid') {
-                setError('Ticket not found in the official system.');
-            } else {
-                setTicket(result.ticket);
-            }
+            setTicket(result.ticket);
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'Could not connect to the ticketing server.');

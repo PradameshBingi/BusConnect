@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, CheckCircle, XCircle, Clock, ArrowRight, Loader2, Calendar, User, Tag, ShieldCheck, Bus, Wallet } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, ArrowRight, Loader2, Calendar, User, Tag, ShieldCheck, Bus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
@@ -98,21 +98,24 @@ export default function VerifyTicketPage() {
         setStatus('idle');
         
         try {
+            console.log("🔎 Fetching from:", `${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
-            if (!response.ok) throw new Error("Server error");
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    setStatus('invalid');
+                    return;
+                }
+                throw new Error("Server communication error.");
+            }
             
             const result = await response.json();
-            
-            if (result.status === 'invalid') {
-                setStatus('invalid');
-            } else {
-                setTicketDetails(result.ticket);
-                setStatus(result.status);
-            }
+            setTicketDetails(result.ticket);
+            setStatus(result.status);
         } catch (error: any) {
             console.error("Verification failed:", error);
             setStatus('error');
-            toast({ variant: 'destructive', title: 'Server Error', description: error.message });
+            toast({ variant: 'destructive', title: 'Connection Error', description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -161,7 +164,7 @@ export default function VerifyTicketPage() {
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Verify Ticket Code</CardTitle>
             <CardDescription>
-              Scan or enter the code to verify against MongoDB.
+              Enter the unique 10-digit code to verify against MongoDB.
             </CardDescription>
           </CardHeader>
           <CardContent>
