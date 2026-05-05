@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,8 +27,8 @@ import { Input } from '@/components/ui/input';
 import { calculateFare } from '@/lib/fare-calculator';
 import { Switch } from '@/components/ui/switch';
 import { SimulatedPayment } from '@/components/simulated-payment';
-import { API_ENDPOINTS } from '@/lib/api-config';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+type PassengerType = 'Men' | 'Child' | 'Women';
 
 const ManIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -46,8 +46,6 @@ const WomanIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-type PassengerType = 'Men' | 'Child' | 'Women';
-
 const passengerMeta: { type: PassengerType; icon: React.ReactNode }[] = [
     { type: 'Men', icon: <ManIcon className="h-6 w-6" /> },
     { type: 'Child', icon: <Baby className="h-6 w-6" /> },
@@ -62,7 +60,6 @@ export function BookingForm() {
   const [totalFare, setTotalFare] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
-  const [networkError, setNetworkError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
@@ -114,25 +111,17 @@ export function BookingForm() {
 
   const initiateBooking = (e: React.FormEvent) => {
     e.preventDefault();
-    setNetworkError(null);
-    
     if (!from || !to) {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select both locations.' });
       return;
     }
-    if (from === to) {
-      toast({ variant: 'destructive', title: 'Invalid Selection', description: 'Locations cannot be the same.' });
-      return;
-    }
-    
     const totalPassengers = Object.values(quantities).reduce((sum, q) => sum + q, 0);
     if (totalPassengers === 0) {
         toast({ variant: 'destructive', title: 'No Passengers', description: 'Please add at least one passenger.' });
         return;
     }
-
-    if (!securityCode || securityCode.length !== 5 || !/^[a-zA-Z0-9]+$/.test(securityCode)) {
-      toast({ variant: 'destructive', title: 'Invalid Security Code', description: 'Please enter a 5-digit alphanumeric code.' });
+    if (!securityCode || securityCode.length !== 5) {
+      toast({ variant: 'destructive', title: 'Invalid Security Code', description: 'Please enter a 5-digit code.' });
       return;
     }
 
@@ -145,97 +134,77 @@ export function BookingForm() {
 
   const finalizeBooking = async () => {
     setIsLoading(true);
-    setNetworkError(null);
+    // Simulate slight delay for "generation"
+    setTimeout(() => {
+      try {
+        const busType = searchParams.get('type') || 'ordinary';
+        const routeNo = hyderabadLocalities.find(l => l.name === from)?.routeNumber || "00";
+        const ticketCode = `TKT-${routeNo}-${Math.floor(10000 + Math.random() * 90000)}`;
+        
+        const passengerSummary = Object.entries(quantities)
+          .filter(([, count]) => count > 0)
+          .map(([type, count]) => `${type}: ${count}`)
+          .join(', ');
 
-    try {
-      const busType = searchParams.get('type') || 'ordinary';
-      const walletAmountUsed = useWallet ? Math.min(totalFare, walletBalance) : 0;
+        const newTicket = {
+          ticketCode,
+          from,
+          to,
+          routeNo,
+          passengers: passengerSummary,
+          quantities,
+          totalFare,
+          fare: finalFare,
+          walletAmountUsed: useWallet ? Math.min(totalFare, walletBalance) : 0,
+          securityCode: securityCode.toUpperCase(),
+          busType,
+          status: 'valid',
+          createdAt: new Date().toISOString()
+        };
 
-      const passengerSummary = Object.entries(quantities)
-        .filter(([, count]) => count > 0)
-        .map(([type, count]) => `${type}: ${count}`)
-        .join(', ');
+        // Save to global history
+        const storedTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+        storedTickets.push(newTicket);
+        localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
 
-      const newTicket = {
-        from,
-        to,
-        routeNo: hyderabadLocalities.find(l => l.name === from)?.routeNumber || "00",
-        passengers: passengerSummary || 'None',
-        quantities,
-        totalFare,
-        fare: finalFare,
-        walletAmountUsed,
-        securityCode,
-        busType,
-      };
+        // Deduct wallet if used
+        if (useWallet && newTicket.walletAmountUsed > 0) {
+            const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
+            storedWallet.balance -= newTicket.walletAmountUsed;
+            storedWallet.transactions.push({
+                type: 'debit',
+                description: `Ticket booking ${ticketCode}`,
+                amount: newTicket.walletAmountUsed,
+                date: new Date().toISOString(),
+            });
+            localStorage.setItem('userWallet', JSON.stringify(storedWallet));
+        }
 
-      const response = await fetch(API_ENDPOINTS.CREATE, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTicket),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Server error (${response.status})`);
+        router.push(`/ticket?id=${ticketCode}`);
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save ticket locally.' });
+      } finally {
+        setIsLoading(false);
       }
-      
-      const result = await response.json();
-      const ticketCode = result.ticket.ticketCode;
-
-      if (useWallet && walletAmountUsed > 0) {
-          const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
-          storedWallet.balance -= walletAmountUsed;
-          storedWallet.transactions.push({
-              type: 'debit',
-              description: `Ticket booking ${ticketCode}`,
-              amount: walletAmountUsed,
-              date: new Date().toISOString(),
-          });
-          localStorage.setItem('userWallet', JSON.stringify(storedWallet));
-      }
-
-      router.push(`/ticket?id=${ticketCode}`);
-
-    } catch (error: any) {
-       console.error("Booking error:", error);
-       setNetworkError(error.message || "Failed to connect to backend");
-       toast({ 
-         variant: 'destructive', 
-         title: 'Booking Failed', 
-         description: error.message 
-       });
-    } finally {
-       setIsLoading(false);
-    }
+    }, 1500);
   };
 
   return (
     <>
       <Card className="w-full max-w-md">
-        <CardHeader className="bg-primary text-primary-foreground text-center p-6">
+        <CardHeader className="bg-primary text-primary-foreground text-center p-6 rounded-t-lg">
           <div className="flex items-center justify-center gap-2">
               <BusFront className="h-7 w-7" />
-              <CardTitle className="font-headline text-2xl">Book Your Digital Ticket</CardTitle>
+              <CardTitle className="font-headline text-2xl">Book Digital Ticket</CardTitle>
           </div>
         </CardHeader>
         <form onSubmit={initiateBooking}>
           <CardContent className="space-y-6 pt-6">
-            {networkError && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>System Issue</AlertTitle>
-                <AlertDescription>{networkError}</AlertDescription>
-              </Alert>
-            )}
-
             <div className="flex items-center gap-2">
               <div className="flex-1 space-y-1">
-                <label htmlFor="from-location" className="text-sm font-medium">From</label>
+                <label className="text-sm font-medium">From</label>
                 <Select value={from} onValueChange={setFrom} required>
-                  <SelectTrigger id="from-location">
-                    <SelectValue placeholder="Select from" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="From" /></SelectTrigger>
                   <SelectContent>
                     {hyderabadLocalities.map((loc) => (
                       <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
@@ -243,15 +212,13 @@ export function BookingForm() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="mt-6 shrink-0" onClick={handleSwap}>
-                <ArrowRightLeft className="h-5 w-5" />
+              <Button type="button" variant="ghost" size="icon" className="mt-6" onClick={handleSwap}>
+                <ArrowRightLeft className="h-4 w-4" />
               </Button>
               <div className="flex-1 space-y-1">
-                <label htmlFor="to-location" className="text-sm font-medium">To</label>
+                <label className="text-sm font-medium">To</label>
                 <Select value={to} onValueChange={setTo} required>
-                  <SelectTrigger id="to-location">
-                    <SelectValue placeholder="Select to" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="To" /></SelectTrigger>
                   <SelectContent>
                     {hyderabadLocalities.map((loc) => (
                        <SelectItem key={loc.name} value={loc.name}>{loc.name}</SelectItem>
@@ -261,68 +228,52 @@ export function BookingForm() {
               </div>
             </div>
 
-            <div>
-               <Label className="text-sm font-medium mb-2 block">Passengers</Label>
-                <div className="space-y-2">
-                  {passengerMeta.map(({ type, icon }) => (
-                    <div key={type} className="flex items-center justify-between rounded-lg border bg-card p-3">
-                      <div className="flex items-center gap-3">
-                        {icon}
-                        <span className="font-medium">{type}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, -1)}>
-                          <MinusCircle className="h-4 w-4" />
-                        </Button>
-                        <span className="text-lg font-bold w-6 text-center">{quantities[type]}</span>
-                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(type, 1)}>
-                          <PlusCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
+            <div className="space-y-2">
+                <Label>Passengers</Label>
+                {passengerMeta.map(({ type, icon }) => (
+                  <div key={type} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-2">{icon}<span className="text-sm">{type}</span></div>
+                    <div className="flex items-center gap-3">
+                      <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(type, -1)}>-</Button>
+                      <span className="font-bold">{quantities[type]}</span>
+                      <Button type="button" variant="outline" size="icon" className="h-7 w-7" onClick={() => handleQuantityChange(type, 1)}>+</Button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
             </div>
             
             {walletBalance > 0 && (
-              <div>
-                  <Label className="text-sm font-medium mb-2 block">Use Wallet Balance</Label>
-                  <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-                      <div className="flex items-center gap-3">
-                          <Wallet className="h-6 w-6 text-primary" />
-                          <div>
-                              <span className="font-medium">Available Balance</span>
-                              <p className="text-sm text-muted-foreground">Rs. {walletBalance.toFixed(2)}</p>
-                          </div>
+              <div className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                      <Wallet className="h-5 w-5 text-primary" />
+                      <div className="text-xs">
+                          <p className="font-bold">Use Wallet</p>
+                          <p className="text-muted-foreground">Bal: Rs. {walletBalance.toFixed(2)}</p>
                       </div>
-                      <Switch checked={useWallet} onCheckedChange={setUseWallet} />
                   </div>
+                  <Switch checked={useWallet} onCheckedChange={setUseWallet} />
               </div>
             )}
 
             <div>
-              <Label htmlFor="security-code" className="text-sm font-medium">Passenger Security Code</Label>
+              <Label>Security Code (5 chars)</Label>
               <Input
-                id="security-code"
-                placeholder="5-digit alphanumeric code"
+                placeholder="ABC12"
                 value={securityCode}
                 onChange={(e) => setSecurityCode(e.target.value.toUpperCase())}
                 maxLength={5}
                 required
-                className="mt-1"
               />
             </div>
 
              <div className="flex justify-between items-center rounded-lg bg-muted p-3">
-                <span className="font-medium">Total Fare:</span>
+                <span className="font-bold">Total Fare:</span>
                 <span className="text-2xl font-bold">Rs. {finalFare}</span>
               </div>
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
-                <><Ticket className="mr-2 h-4 w-4" /> {finalFare > 0 ? `Pay Rs. ${finalFare} & Generate` : 'Generate Ticket'}</>
-              )}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <><Ticket className="mr-2 h-4 w-4" /> Generate Ticket</>}
             </Button>
           </CardFooter>
         </form>

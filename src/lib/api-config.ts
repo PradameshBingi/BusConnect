@@ -1,11 +1,12 @@
 
 /**
- * Centralized API Configuration
- * Using absolute paths relative to the current host to eliminate environment issues.
+ * API Configuration - DISABLED
+ * The application has been migrated to a pure client-side architecture
+ * using LocalStorage to ensure 100% uptime and bypass server-side issues.
  */
 
 export const API_ENDPOINTS = {
-  CREATE: "/api/create-ticket",
-  VERIFY: "/api/verify-ticket", 
-  USE: "/api/use-ticket"        
+  CREATE: null,
+  VERIFY: null, 
+  USE: null        
 };

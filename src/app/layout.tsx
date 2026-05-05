@@ -17,34 +17,25 @@ export default function RootLayout({
 
   useEffect(() => {
     setMounted(true);
+    // Force splash screen to clear after a short mount delay
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <title>BusConnect</title>
-        <meta name="description" content="Hyderabad Public Bus Transport System" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-          rel="stylesheet"
-        />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         {mounted && isLoading ? <SplashScreen /> : null}
-        <div style={{ visibility: (mounted && !isLoading) ? 'visible' : 'hidden', display: 'contents' }}>
+        <div style={{ display: mounted && !isLoading ? 'block' : 'none' }} className="flex-grow">
           <FirebaseClientProvider>
-            <main className="flex-grow pb-24">{children}</main>
+            <main className="pb-24">{children}</main>
             <Toaster />
             <footer className="bg-white p-4 text-center border-t fixed bottom-0 w-full z-40">
               <p className="text-xs text-muted-foreground">Powered by</p>
