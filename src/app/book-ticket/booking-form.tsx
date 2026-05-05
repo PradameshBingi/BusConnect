@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -168,13 +169,9 @@ export function BookingForm() {
         busType,
       };
 
-      console.log("🚀 Calling API Route:", API_ENDPOINTS.CREATE);
-      
       const response = await fetch(API_ENDPOINTS.CREATE, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newTicket),
       });
 
@@ -185,11 +182,6 @@ export function BookingForm() {
       
       const result = await response.json();
       const ticketCode = result.ticket.ticketCode;
-
-      // Update local storage for history purposes
-      const existingTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-      existingTickets.push(result.ticket);
-      localStorage.setItem('generatedTickets', JSON.stringify(existingTickets));
 
       if (useWallet && walletAmountUsed > 0) {
           const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
@@ -206,12 +198,12 @@ export function BookingForm() {
       router.push(`/ticket?id=${ticketCode}`);
 
     } catch (error: any) {
-       console.error("Booking error details:", error);
-       setNetworkError(error.message || "Network connection failed");
+       console.error("Booking error:", error);
+       setNetworkError(error.message || "Failed to connect to backend");
        toast({ 
          variant: 'destructive', 
          title: 'Booking Failed', 
-         description: error.message || "Please check your internet connection."
+         description: error.message 
        });
     } finally {
        setIsLoading(false);
@@ -232,10 +224,8 @@ export function BookingForm() {
             {networkError && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Network Error</AlertTitle>
-                <AlertDescription>
-                  {networkError}. If this persists, please try refreshing the page.
-                </AlertDescription>
+                <AlertTitle>System Issue</AlertTitle>
+                <AlertDescription>{networkError}</AlertDescription>
               </Alert>
             )}
 

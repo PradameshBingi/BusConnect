@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -54,31 +55,30 @@ function TicketContent() {
     }
 
     const fetchTicket = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            console.log("🔎 Fetching ticket from database:", id);
+            console.log("🔎 Fetching ticket:", id);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             
-            // Check if response is JSON
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
-                const text = await response.text();
-                console.error("Non-JSON response received:", text);
-                throw new Error(`Server returned non-JSON response (${response.status}). The API route might have crashed.`);
+                throw new Error("Server returned an invalid format. The API might be down.");
             }
 
             const result = await response.json();
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    throw new Error("Ticket not found in database.");
+                    throw new Error("Ticket not found. Please check your booking code.");
                 }
-                throw new Error(result.error || `Server Error (${response.status})`);
+                throw new Error(result.error || result.details || "Server error occurred");
             }
             
             setTicket(result.ticket);
         } catch (err: any) {
-            console.error("Fetch Ticket Error:", err);
-            setError(err.message || 'Connection to ticketing system failed');
+            console.error("Fetch error:", err);
+            setError(err.message || 'Connection failed');
         } finally {
             setLoading(false);
         }
@@ -90,9 +90,9 @@ function TicketContent() {
   const handleCopy = (text: string, fieldName: string) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(text).then(() => {
-        toast({ title: "Copied!", description: `${fieldName} copied to clipboard.` });
+        toast({ title: "Copied!", description: `${fieldName} copied.` });
       }).catch(() => {
-        toast({ variant: 'destructive', title: "Copy Failed" });
+        toast({ variant: 'destructive', title: "Copy failed" });
       });
     }
   };
@@ -117,7 +117,7 @@ function TicketContent() {
       <Card className="w-full max-w-md">
         <CardContent className="p-10 flex flex-col items-center gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground font-medium">Retrieving Ticket Data...</p>
+            <p className="text-muted-foreground font-medium">Retrieving Journey Details...</p>
         </CardContent>
       </Card>
     </div>
@@ -128,16 +128,8 @@ function TicketContent() {
       <Card className="w-full max-w-md">
           <CardContent className="p-10 flex flex-col items-center gap-4">
             <AlertTriangle className="h-12 w-12 text-destructive" />
-            <h2 className="text-xl font-bold">System Connection Issue</h2>
+            <h2 className="text-xl font-bold uppercase tracking-tight">Access Error</h2>
             <p className="text-muted-foreground text-sm">{error}</p>
-            <div className="bg-muted p-3 rounded text-[10px] text-left w-full overflow-auto max-h-32">
-                <p className="font-bold mb-1">Troubleshooting Tips:</p>
-                <ul className="list-disc ml-4 space-y-1">
-                    <li>Ensure your MongoDB database is active.</li>
-                    <li>Check if your environment's IP is whitelisted in MongoDB Atlas.</li>
-                    <li>Verify the ticket ID in the URL is correct.</li>
-                </ul>
-            </div>
             <Button asChild variant="outline" className="mt-4">
                 <Link href="/select-ticket-type">Return to Home</Link>
             </Button>
@@ -158,13 +150,13 @@ function TicketContent() {
             <div className="text-center space-y-2">
                 <div className="inline-flex items-center gap-2 bg-green-100 text-green-700 px-4 py-1.5 rounded-full font-bold">
                     <History className="h-4 w-4" />
-                    TICKET USED & VALIDATED
+                    JOURNEY VALIDATED
                 </div>
-                <p className="text-sm text-muted-foreground">This is your digital receipt for the journey.</p>
+                <p className="text-sm text-muted-foreground">Thank you for traveling with TGSRTC.</p>
             </div>
             <GeneratedTicket ticket={ticket as any} />
             <Button asChild variant="outline" className="w-full max-w-sm">
-                <Link href="/select-bus-type">Book Next Journey</Link>
+                <Link href="/select-bus-type">Book Another Ticket</Link>
             </Button>
         </div>
     );
@@ -181,7 +173,7 @@ function TicketContent() {
         <CardHeader className="bg-white text-primary text-center p-6 border-b">
           <div className="flex items-center justify-center gap-2">
             <TicketIcon className="h-7 w-7" />
-            <CardTitle className="font-headline text-2xl font-bold uppercase tracking-tight">Your Digital Ticket</CardTitle>
+            <CardTitle className="font-headline text-2xl font-bold uppercase tracking-tight">Digital Ticket</CardTitle>
           </div>
           {ticket.status === 'cancelled' && (
               <div className="mt-4 flex items-center justify-center gap-2 bg-destructive/10 text-destructive p-2 rounded font-bold text-sm">
@@ -225,13 +217,8 @@ function TicketContent() {
              <div className="flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-primary" />
                 <div>
-                    <p className="text-[9px] uppercase">Total Cost</p>
+                    <p className="text-[9px] uppercase">Fare Paid</p>
                     <p className="font-bold">Rs. {totalCost.toFixed(2)}</p>
-                    {(ticket.walletAmountUsed || 0) > 0 ? (
-                        <p className="text-[8px] text-primary font-medium">Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}{ticket.fare > 0 ? ` + Paid: Rs. ${ticket.fare.toFixed(2)}` : ''}</p>
-                    ) : (
-                        <p className="text-[8px] text-muted-foreground italic">Paid: Rs. {ticket.fare.toFixed(2)}</p>
-                    )}
                 </div>
              </div>
               <div className="flex items-center gap-2">
@@ -242,19 +229,19 @@ function TicketContent() {
 
           <Separator />
 
-          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex justify-between items-center cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'Security PIN')}>
+          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex justify-between items-center cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
             <div className="flex items-center gap-3">
               <ShieldCheck className="h-5 w-5 text-primary"/>
               <div>
-                <p className="text-[10px] uppercase">Security PIN</p>
+                <p className="text-[10px] uppercase">Passenger PIN</p>
                 <p className="font-mono text-xl font-bold tracking-widest text-primary">{ticket.securityCode}</p>
               </div>
             </div>
             <Copy className="h-4 w-4 text-muted-foreground" />
           </div>
 
-          <div className="text-center p-4 bg-slate-900 text-white rounded-lg cursor-pointer" onClick={() => handleCopy(ticket.ticketCode, 'Ticket Code')}>
-            <p className="text-[10px] uppercase text-slate-400 mb-1">Unique Ticket Code</p>
+          <div className="text-center p-4 bg-slate-900 text-white rounded-lg cursor-pointer" onClick={() => handleCopy(ticket.ticketCode, 'Code')}>
+            <p className="text-[10px] uppercase text-slate-400 mb-1">Ticket Code</p>
             <p className="font-mono text-xl font-bold tracking-widest break-all">{ticket.ticketCode}</p>
           </div>
 
@@ -271,19 +258,19 @@ function TicketContent() {
               </div>
           ) : ticket.status === 'cancelled' ? (
               <div className="text-center p-4 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg">
-                  <p className="text-destructive font-bold">TICKET VOIDED</p>
-                  <p className="text-xs text-muted-foreground mt-1">Amount has been refunded to your wallet.</p>
+                  <p className="text-destructive font-bold uppercase">Ticket Voided</p>
+                  <p className="text-xs text-muted-foreground mt-1">Amount credited to your wallet.</p>
               </div>
           ) : (
               <div className="text-center p-4 bg-yellow-500/5 border-2 border-dashed border-yellow-500/20 rounded-lg">
-                  <p className="text-yellow-600 font-bold uppercase">Ticket Expired</p>
-                  <p className="text-xs text-muted-foreground mt-1">This ticket is no longer valid for travel.</p>
+                  <p className="text-yellow-600 font-bold uppercase">Validity Expired</p>
+                  <p className="text-xs text-muted-foreground mt-1">Please book a new ticket for travel.</p>
               </div>
           )}
         </CardContent>
          <CardFooter className="p-6 bg-muted/20 border-t">
           <Button asChild className="w-full font-bold uppercase bg-primary">
-            <Link href="/select-bus-type">Order Another Ticket</Link>
+            <Link href="/select-bus-type">Order New Ticket</Link>
           </Button>
         </CardFooter>
       </Card>
@@ -294,7 +281,7 @@ function TicketContent() {
 export default function TicketPage() {
   return (
     <>
-      <Header showBackButton={true} backHref="/select-ticket-type" title="Ticket Details" />
+      <Header showBackButton={true} backHref="/select-ticket-type" title="My Ticket" />
       <Suspense fallback={<div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)]"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
         <TicketContent />
       </Suspense>

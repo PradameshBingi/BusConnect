@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,44 +32,44 @@ type VerificationStatus = 'valid' | 'invalid' | 'expired' | 'used' | 'cancelled'
 const statusInfo: {[key in VerificationStatus]?: any} = {
   invalid: {
     icon: <XCircle className="h-16 w-16 text-red-500" />,
-    title: 'Ticket Invalid',
-    description: 'The ticket code entered could not be found in the database.',
+    title: 'Invalid Ticket',
+    description: 'The ticket code entered was not found in the database.',
     color: 'text-red-500',
   },
   expired: {
     icon: <Clock className="h-16 w-16 text-yellow-500" />,
     title: 'Ticket Expired',
-    description: 'This ticket has expired and is no longer valid.',
+    description: 'This ticket has exceeded its 10-minute validity window.',
     color: 'text-yellow-500',
   },
   used: {
     icon: <XCircle className="h-16 w-16 text-orange-500" />,
     title: 'Already Used',
-    description: 'This ticket has already been validated and cannot be reused.',
+    description: 'This ticket has already been validated for travel.',
     color: 'text-orange-500',
   },
   error: {
     icon: <XCircle className="h-16 w-16 text-destructive" />,
-    title: 'Server Error',
-    description: 'Communication failure. Please check your connection.',
+    title: 'System Error',
+    description: 'Failed to communicate with the database.',
     color: 'text-destructive',
   },
   cancelled: {
     icon: <XCircle className="h-16 w-16 text-orange-500" />,
-    title: 'Ticket Canceled',
+    title: 'Ticket Cancelled',
     description: 'This ticket was voided by the passenger.',
     color: 'text-orange-500',
   },
   valid: {
     icon: <CheckCircle className="h-16 w-16 text-green-500" />,
     title: 'Ticket Valid',
-    description: 'Confirm details and PIN before validating.',
+    description: 'Verify the Passenger PIN before validation.',
     color: 'text-green-500',
   },
   validated: {
     icon: <CheckCircle className="h-16 w-16 text-green-500" />,
-    title: 'Successfully Validated',
-    description: 'The journey is now active.',
+    title: 'Validated!',
+    description: 'Journey marked as active in database.',
     color: 'text-green-500',
   },
 };
@@ -98,24 +99,28 @@ export default function VerifyTicketPage() {
         setStatus('idle');
         
         try {
-            console.log("🔎 Fetching from API Route:", `${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
             
-            if (!response.ok) {
-                if (response.status === 404) {
-                    setStatus('invalid');
-                    return;
-                }
-                throw new Error("Server communication error.");
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                throw new Error("Invalid server response format");
             }
-            
+
             const result = await response.json();
+            
+            if (response.status === 404) {
+                setStatus('invalid');
+                return;
+            }
+
+            if (!response.ok) throw new Error(result.error || "Verification failed");
+
             setTicketDetails(result.ticket);
             setStatus(result.status);
         } catch (error: any) {
-            console.error("Verification failed:", error);
+            console.error("Verification error:", error);
             setStatus('error');
-            toast({ variant: 'destructive', title: 'Connection Error', description: error.message });
+            toast({ variant: 'destructive', title: 'Connection Issue', description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -131,18 +136,15 @@ export default function VerifyTicketPage() {
                 headers: { 'Content-Type': 'application/json' }
             });
 
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || "Validation failed");
-            }
-
             const result = await response.json();
+            if (!response.ok) throw new Error(result.error || "Validation failed");
+
             setStatus('validated');
             setTicketDetails(result.ticket);
-            toast({ title: "Validated", description: "Ticket marked as used successfully." });
+            toast({ title: "Validated", description: "Journey marked as active." });
         } catch (error: any) {
-            console.error("Failed to validate ticket:", error);
-            toast({ variant: 'destructive', title: 'Validation Failed', description: error.message });
+            console.error("Validation error:", error);
+            toast({ variant: 'destructive', title: 'Action Failed', description: error.message });
         } finally {
             setIsLoading(false);
         }
@@ -162,15 +164,15 @@ export default function VerifyTicketPage() {
       <div className="flex flex-col items-center bg-muted/40 p-4 md:p-8" style={{minHeight: 'calc(100vh - 8rem)'}}>
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">Verify Ticket Code</CardTitle>
+            <CardTitle className="text-2xl font-headline uppercase tracking-tight">Verify Code</CardTitle>
             <CardDescription>
-              Enter the unique 10-digit code to verify against MongoDB.
+              Enter the unique 10-digit ticket ID.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleVerification} className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="ticket-code">Ticket Code</Label>
+                <Label htmlFor="ticket-code">Ticket ID</Label>
                 <Input
                   id="ticket-code"
                   placeholder="e.g., TKT-01-12345"
@@ -183,7 +185,7 @@ export default function VerifyTicketPage() {
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                Verify Against Database
+                Query Database
               </Button>
             </form>
           </CardContent>
@@ -196,7 +198,7 @@ export default function VerifyTicketPage() {
                   <div className="flex justify-center mb-2">
                       {currentStatusInfo.icon}
                   </div>
-                  <CardTitle className={`text-center text-2xl font-bold ${currentStatusInfo.color}`}>{currentStatusInfo.title}</CardTitle>
+                  <CardTitle className={`text-center text-2xl font-bold uppercase tracking-tight ${currentStatusInfo.color}`}>{currentStatusInfo.title}</CardTitle>
                   <CardDescription className="text-center mt-2">{currentStatusInfo.description}</CardDescription>
               </CardHeader>
             )}
@@ -229,21 +231,21 @@ export default function VerifyTicketPage() {
                            <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground"/>
                               <div>
-                                  <p className="font-semibold text-[10px] uppercase">Passengers</p>
-                                  <p className="text-muted-foreground font-bold">{ticketDetails.passengers}</p>
+                                  <p className="font-semibold text-[10px] uppercase">Pass</p>
+                                  <p className="text-muted-foreground font-bold truncate max-w-[80px]">{ticketDetails.passengers}</p>
                               </div>
                            </div>
                            <div className="flex items-center gap-2">
                              <Tag className="h-4 w-4 text-muted-foreground" />
                               <div className="flex-1">
-                                  <p className="font-semibold text-[10px] uppercase">Total Cost</p>
+                                  <p className="font-semibold text-[10px] uppercase">Total</p>
                                   <p className="font-bold text-sm">Rs. {(ticketDetails.totalFare || (ticketDetails.fare + (ticketDetails.walletAmountUsed || 0))).toFixed(2)}</p>
                               </div>
                            </div>
                             <div className="flex items-center gap-2">
                                 <Bus className="h-4 w-4 text-muted-foreground"/>
                                 <div>
-                                    <p className="font-semibold text-[10px] uppercase">{status === 'used' || status === 'validated' ? 'Boarded Bus' : 'Booked Bus'}</p>
+                                    <p className="font-semibold text-[10px] uppercase">Type</p>
                                     <p className="text-muted-foreground font-bold">{getFullBusType(ticketDetails.busType)}</p>
                                 </div>
                             </div>
@@ -254,7 +256,7 @@ export default function VerifyTicketPage() {
                         <div className="flex items-center gap-2">
                             <ShieldCheck className="h-5 w-5 text-muted-foreground"/>
                             <div>
-                                <p className="font-semibold text-[10px] uppercase">Passenger PIN</p>
+                                <p className="font-semibold text-[10px] uppercase">Required PIN</p>
                                 <p className="font-mono text-lg font-bold tracking-widest text-primary">{ticketDetails.securityCode}</p>
                             </div>
                         </div>
@@ -264,11 +266,11 @@ export default function VerifyTicketPage() {
               
             <CardFooter className="p-6 pt-2">
               {status === 'valid' ? (
-                  <Button className="w-full" onClick={handleValidateTicket} disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin" /> : "Validate Ticket"}
+                  <Button className="w-full font-bold uppercase" onClick={handleValidateTicket} disabled={isLoading}>
+                      {isLoading ? <Loader2 className="animate-spin" /> : "Validate Boarding"}
                   </Button>
               ) : (
-                  <Button variant="outline" className="w-full" onClick={resetState}>Verify Another Ticket</Button>
+                  <Button variant="outline" className="w-full uppercase font-bold" onClick={resetState}>Verify Next</Button>
               )}
             </CardFooter>
           </Card>

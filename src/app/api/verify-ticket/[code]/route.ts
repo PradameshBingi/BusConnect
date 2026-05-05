@@ -1,38 +1,39 @@
+
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ code: string }> }
+  context: { params: Promise<{ code: string }> }
 ) {
   try {
     await dbConnect();
     const Ticket = getTicketModel();
-    const { code } = await params;
+    const { code } = await context.params;
     
     if (!code) {
-      return NextResponse.json({ error: "Missing ticket code in request" }, { status: 400 });
+      return NextResponse.json({ error: "Missing ticket code" }, { status: 400 });
     }
 
     const ticketCode = code.toUpperCase();
-    console.log("🔎 Searching Database for Ticket:", ticketCode);
+    console.log("🔎 Verifying Ticket:", ticketCode);
 
     const ticket = await Ticket.findOne({ ticketCode });
     
     if (!ticket) {
-      console.warn("⚠️ Ticket not found:", ticketCode);
       return NextResponse.json({ status: "invalid", message: "Ticket not found" }, { status: 404 });
     }
 
-    // Auto-expiry logic (10 minutes)
+    // Auto-expiry logic (10 minutes for prototype)
     const now = new Date();
     const createdAt = new Date(ticket.createdAt);
-    const expiryTime = new Date(createdAt.getTime() + 600000); // 10 mins
+    const expiryTime = new Date(createdAt.getTime() + 600000); 
 
     if (ticket.status === "valid" && now > expiryTime) {
       ticket.status = "expired";
-      await ticket.save().catch(e => console.error("Failed to update status to expired:", e.message));
-      console.log("⏰ Ticket automatically expired in DB:", ticketCode);
+      await ticket.save().catch(e => console.error("Expiry update failed:", e.message));
       return NextResponse.json({ status: "expired", ticket });
     }
 
@@ -40,9 +41,8 @@ export async function GET(
   } catch (err: any) {
     console.error("❌ API /verify-ticket Error:", err);
     return NextResponse.json({ 
-      error: "Could not retrieve ticket details", 
-      details: err.message,
-      help: "Ensure MongoDB connection is active and stable."
+      error: "Server Error", 
+      details: err.message 
     }, { status: 500 });
   }
 }

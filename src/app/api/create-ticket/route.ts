@@ -1,5 +1,8 @@
+
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
@@ -20,15 +23,14 @@ export async function POST(request: Request) {
     });
 
     await ticket.save();
-    console.log("✨ Ticket Created successfully in DB:", ticketCode);
+    console.log("✨ Ticket Created:", ticketCode);
     
     return NextResponse.json({ status: "created", ticket }, { status: 201 });
   } catch (err: any) {
     console.error("❌ API /create-ticket Error:", err);
     return NextResponse.json({ 
       error: "Database operation failed", 
-      details: err.message,
-      help: "Check if your IP is whitelisted in MongoDB Atlas."
+      details: err.message 
     }, { status: 500 });
   }
 }

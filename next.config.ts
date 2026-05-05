@@ -1,10 +1,8 @@
 
 import type {NextConfig} from 'next';
 
-const isProd = process.env.NODE_ENV === 'production';
-
 const nextConfig: NextConfig = {
-  output: 'export',
+  // Removed output: 'export' to enable API routes and dynamic rendering
   images: {
     unoptimized: true,
     dangerouslyAllowSVG: true,
@@ -42,8 +40,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Base path and asset prefix are usually handled by GitHub Actions (actions/configure-pages)
-  // but can be explicitly set if needed.
   basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
 };
 

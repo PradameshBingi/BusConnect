@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 
 const MONGODB_URI = "mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/BusConnect?retryWrites=true&w=majority";
@@ -41,13 +42,13 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 8000, // 10s timeout for better UX
+      serverSelectionTimeoutMS: 10000,
       connectTimeoutMS: 10000,
     };
 
-    console.log("📡 Attempting MongoDB Connection...");
+    console.log("📡 Connecting to MongoDB...");
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
-      console.log("✅ MongoDB Connected Successfully");
+      console.log("✅ MongoDB Connected");
       return mongooseInstance;
     });
   }
@@ -60,7 +61,7 @@ async function dbConnect() {
     }
   } catch (e) {
     cached.promise = null;
-    console.error("❌ MongoDB Connection Failure:", e);
+    console.error("❌ MongoDB Connection Error:", e);
     throw e;
   }
 
