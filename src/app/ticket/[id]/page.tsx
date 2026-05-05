@@ -1,9 +1,7 @@
 
-/**
- * @fileOverview Redirects legacy dynamic paths to the standardized query-parameter based ticket view.
- */
+'use client';
 
-export default function TicketIDPage() {
+export default function TicketIDRedirect() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted/30 p-4 text-center">
       <h2 className="text-xl font-bold mb-2">Accessing Ticket...</h2>
