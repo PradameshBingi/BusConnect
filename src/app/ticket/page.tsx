@@ -15,7 +15,7 @@ import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { cn } from '@/lib/utils';
 import { API_ENDPOINTS } from '@/lib/api-config';
 
-// Force dynamic behavior for the ticket page
+// FORCE dynamic behavior for the ticket page
 export const dynamic = "force-dynamic";
 
 type Ticket = {
@@ -66,7 +66,7 @@ function TicketContent() {
             
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Server returned an invalid format. This page requires dynamic mode.");
+                throw new Error("Server returned an invalid format. Please refresh or try booking again.");
             }
 
             const result = await response.json();
@@ -75,7 +75,7 @@ function TicketContent() {
                 if (response.status === 404) {
                     throw new Error("Ticket not found in database.");
                 }
-                throw new Error(result.error || result.details || "Server error occurred");
+                throw new Error(result.error || result.details || "Server communication issue");
             }
             
             setTicket(result.ticket);

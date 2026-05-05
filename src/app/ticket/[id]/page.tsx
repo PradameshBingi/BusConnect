@@ -1,26 +1,32 @@
 
 'use client';
 
-export default function TicketIDRedirect() {
+import { useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+/**
+ * Robust redirect handler for dynamic path tickets.
+ * Converts /ticket/TKT-XXX to /ticket?id=TKT-XXX
+ */
+export default function TicketIDPage() {
+  const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+
+  useEffect(() => {
+    if (id) {
+      router.replace(`/ticket?id=${id}`);
+    } else {
+      router.replace('/select-ticket-type');
+    }
+  }, [id, router]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-muted/30 p-4 text-center">
+      <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
       <h2 className="text-xl font-bold mb-2">Accessing Ticket...</h2>
-      <p className="text-muted-foreground">Please wait while we load your digital ticket details.</p>
-      
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            // Extract ID from path and redirect to query param version
-            const pathParts = window.location.pathname.split('/');
-            const id = pathParts[pathParts.length - 1];
-            if (id && id !== 'view' && id !== '[id]') {
-              window.location.href = '/ticket?id=' + id;
-            } else {
-              window.location.href = '/select-ticket-type';
-            }
-          `,
-        }}
-      />
+      <p className="text-muted-foreground text-sm">Please wait while we redirect you to your digital journey details.</p>
     </div>
   );
 }

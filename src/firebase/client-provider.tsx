@@ -1,3 +1,4 @@
+
 'use client';
 
 import {useEffect, useState} from 'react';
@@ -12,38 +13,33 @@ export function FirebaseClientProvider({children}: {children: React.ReactNode}) 
     app: FirebaseApp;
     firestore: Firestore;
   } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [initAttempted, setInitAttempted] = useState(false);
 
   useEffect(() => {
+    // Only attempt if API Key is present. If missing, we skip Firebase 
+    // but still allow the rest of the app to function.
     if (firebaseConfig.apiKey) {
       try {
         const {app, firestore} = initializeFirebase();
         setFirebase({app, firestore});
       } catch (e: any) {
-        console.error("Firebase initialization error:", e);
-        setError(`Firebase initialization failed: ${e.message}`);
+        console.error("Firebase initialization failed:", e.message);
       }
     } else {
-       console.warn("Firebase API Key is missing. Firebase features will be disabled.");
-       setError("Firebase API Key is missing. Please check your .env file and ensure Firebase is set up correctly.");
+       console.warn("Firebase API Key is missing. Firebase features will be disabled, but app will continue.");
     }
+    setInitAttempted(true);
   }, []);
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background text-foreground p-4">
-        <div className="w-full max-w-lg p-6 bg-card border border-destructive rounded-lg shadow-lg">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Firebase Configuration Error</h1>
-          <p className="text-card-foreground">{error}</p>
-          <p className="text-sm text-muted-foreground mt-4">This usually happens when the Firebase environment variables (like `NEXT_PUBLIC_FIREBASE_API_KEY`) are not set correctly. Please ensure your Firebase project is properly configured.</p>
-        </div>
-      </div>
-    );
+  if (!initAttempted) {
+    // Return children but keep them wrapped to prevent layout shifts
+    // During hydration/init we just render children directly.
+    return <div className="contents">{children}</div>;
   }
 
   if (!firebase) {
-    // You can show a loading skeleton here while Firebase is initializing
-    return null; 
+    // If firebase failed or was skipped, still render children
+    return <>{children}</>;
   }
 
   return (

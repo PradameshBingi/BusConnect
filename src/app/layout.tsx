@@ -15,9 +15,10 @@ export default function RootLayout({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Shorter splash screen duration to improve perceived performance
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 3000); // 3 seconds
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
@@ -40,17 +41,14 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
         {isLoading ? <SplashScreen /> : (
-          <>
-            <FirebaseClientProvider>
-              {/* Added pb-20 for footer spacing */}
-              <main className="flex-grow pb-20">{children}</main>
-            </FirebaseClientProvider>
+          <FirebaseClientProvider>
+            <main className="flex-grow pb-24">{children}</main>
             <Toaster />
-            <footer className="bg-footer p-4 text-center border-t fixed bottom-0 w-full z-10">
-              <p className="text-sm text-footer-foreground">Powered by</p>
-              <p className="font-bold text-lg" style={{ color: 'hsl(var(--footer-name-color))' }}>Bingi Pradamesh</p>
+            <footer className="bg-white p-4 text-center border-t fixed bottom-0 w-full z-40">
+              <p className="text-xs text-muted-foreground">Powered by</p>
+              <p className="font-bold text-lg text-primary">Bingi Pradamesh</p>
             </footer>
-          </>
+          </FirebaseClientProvider>
         )}
       </body>
     </html>

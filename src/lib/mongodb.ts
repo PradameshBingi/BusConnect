@@ -50,6 +50,10 @@ async function dbConnect() {
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       console.log("✅ MongoDB Connected Successfully");
       return mongooseInstance;
+    }).catch(err => {
+      console.error("❌ MongoDB Connection Error:", err.message);
+      cached.promise = null;
+      throw err;
     });
   }
 
@@ -61,7 +65,6 @@ async function dbConnect() {
     }
   } catch (e) {
     cached.promise = null;
-    console.error("❌ MongoDB Connection Error:", e);
     throw e;
   }
 
