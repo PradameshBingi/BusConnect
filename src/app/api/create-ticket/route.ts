@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     });
 
     await ticket.save();
-    console.log("✨ Ticket Created:", ticketCode);
+    console.log("✨ Ticket Created successfully:", ticketCode);
     
     return NextResponse.json({ status: "created", ticket }, { status: 201 });
   } catch (err: any) {

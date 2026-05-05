@@ -1,13 +1,7 @@
 
 /**
- * @fileOverview Placeholder page for dynamic upgrade routes to satisfy static export requirements.
- * Redirects to the query-parameter based upgrade view.
+ * @fileOverview Redirects legacy dynamic paths to the standardized query-parameter based upgrade view.
  */
-
-export function generateStaticParams() {
-  // Satisfy Next.js build requirement for static export
-  return [{ id: 'view' }];
-}
 
 export default function UpgradeIDPage() {
   return (
@@ -20,7 +14,7 @@ export default function UpgradeIDPage() {
           __html: `
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
-            if (id && id !== 'view') {
+            if (id && id !== 'view' && id !== '[id]') {
               window.location.href = '/upgrade-ticket?id=' + id;
             } else {
               window.location.href = '/booking-history';
