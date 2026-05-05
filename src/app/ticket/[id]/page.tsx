@@ -1,13 +1,7 @@
 
 /**
- * @fileOverview Placeholder page for dynamic ticket routes to satisfy static export requirements.
- * Redirects to the query-parameter based ticket view.
+ * @fileOverview Redirects legacy dynamic paths to the standardized query-parameter based ticket view.
  */
-
-export function generateStaticParams() {
-  // Satisfy Next.js build requirement for static export by providing a dummy path
-  return [{ id: 'view' }];
-}
 
 export default function TicketIDPage() {
   return (
@@ -21,7 +15,7 @@ export default function TicketIDPage() {
             // Extract ID from path and redirect to query param version
             const pathParts = window.location.pathname.split('/');
             const id = pathParts[pathParts.length - 1];
-            if (id && id !== 'view') {
+            if (id && id !== 'view' && id !== '[id]') {
               window.location.href = '/ticket?id=' + id;
             } else {
               window.location.href = '/select-ticket-type';

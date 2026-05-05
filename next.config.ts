@@ -2,7 +2,7 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  // Removed output: 'export' to enable API routes and dynamic rendering
+  // Ensure the app is NOT in static export mode to allow for dynamic API routes
   images: {
     unoptimized: true,
     dangerouslyAllowSVG: true,
