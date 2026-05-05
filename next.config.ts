@@ -3,7 +3,6 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   // Ensure the app is NOT in static export mode to allow for dynamic API routes
-  // No "output: export" should be present here.
   images: {
     unoptimized: true,
     dangerouslyAllowSVG: true,
@@ -41,7 +40,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  // Removed basePath to prevent routing issues in the workstation environment
 };
 
 export default nextConfig;

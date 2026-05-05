@@ -19,8 +19,6 @@ export async function GET(
     }
 
     const ticketCode = code.toUpperCase();
-    console.log("🔎 Verifying Ticket:", ticketCode);
-
     const ticket = await Ticket.findOne({ ticketCode });
     
     if (!ticket) {

@@ -12,10 +12,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Shorter splash screen duration to improve perceived performance
+    setMounted(true);
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
@@ -40,7 +41,8 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        {isLoading ? <SplashScreen /> : (
+        {mounted && isLoading ? <SplashScreen /> : null}
+        <div style={{ visibility: (mounted && !isLoading) ? 'visible' : 'hidden', display: 'contents' }}>
           <FirebaseClientProvider>
             <main className="flex-grow pb-24">{children}</main>
             <Toaster />
@@ -49,7 +51,7 @@ export default function RootLayout({
               <p className="font-bold text-lg text-primary">Bingi Pradamesh</p>
             </footer>
           </FirebaseClientProvider>
-        )}
+        </div>
       </body>
     </html>
   );

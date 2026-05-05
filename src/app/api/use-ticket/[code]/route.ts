@@ -34,7 +34,6 @@ export async function POST(
     if (updateData.fare) ticket.fare = updateData.fare;
 
     await ticket.save();
-    console.log("✅ Ticket Validated successfully:", ticketCode);
     
     return NextResponse.json({ status: "updated", ticket });
   } catch (err: any) {

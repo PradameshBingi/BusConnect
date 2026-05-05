@@ -5,10 +5,6 @@ import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-/**
- * Robust redirect handler for dynamic path tickets.
- * Converts /ticket/TKT-XXX to /ticket?id=TKT-XXX
- */
 export default function TicketIDPage() {
   const router = useRouter();
   const params = useParams();
@@ -18,7 +14,7 @@ export default function TicketIDPage() {
     if (id) {
       router.replace(`/ticket?id=${id}`);
     } else {
-      router.replace('/select-ticket-type');
+      router.replace('/');
     }
   }, [id, router]);
 
