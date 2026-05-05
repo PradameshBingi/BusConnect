@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -7,12 +6,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ code: string }> }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     await dbConnect();
     const Ticket = getTicketModel();
-    const { code } = await context.params;
+    const { code } = await params;
     
     if (!code) {
       return NextResponse.json({ error: "Missing ticket code" }, { status: 400 });
@@ -32,7 +31,7 @@ export async function GET(
 
     if (ticket.status === "valid" && now > expiryTime) {
       ticket.status = "expired";
-      await ticket.save().catch(e => console.error("Expiry update failed:", e.message));
+      await ticket.save();
       return NextResponse.json({ status: "expired", ticket });
     }
 

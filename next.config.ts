@@ -1,8 +1,7 @@
-
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
-  // Ensure the app is NOT in static export mode to allow for dynamic API routes
+  // IMPORTANT: Standard Next.js mode (not static export) to support dynamic API routes and MongoDB
   images: {
     unoptimized: true,
     dangerouslyAllowSVG: true,
@@ -40,7 +39,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // Removed basePath to prevent routing issues in the workstation environment
 };
 
 export default nextConfig;

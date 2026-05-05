@@ -1,12 +1,10 @@
-
 /**
- * API Configuration - DISABLED
- * The application has been migrated to a pure client-side architecture
- * using LocalStorage to ensure 100% uptime and bypass server-side issues.
+ * API Configuration
+ * Using relative paths to ensure standard Next.js routing.
  */
 
 export const API_ENDPOINTS = {
-  CREATE: null,
-  VERIFY: null, 
-  USE: null        
+  CREATE: '/api/create-ticket',
+  VERIFY: '/api/verify-ticket', // Note: Append /<code> dynamically
+  USE: '/api/use-ticket'        // Note: Append /<code> dynamically
 };

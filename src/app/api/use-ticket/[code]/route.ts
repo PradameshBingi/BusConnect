@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -7,12 +6,12 @@ export const dynamic = "force-dynamic";
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ code: string }> }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
     await dbConnect();
     const Ticket = getTicketModel();
-    const { code } = await context.params;
+    const { code } = await params;
     const ticketCode = code.toUpperCase();
     const updateData = await request.json().catch(() => ({}));
     

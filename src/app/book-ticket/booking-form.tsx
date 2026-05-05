@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { calculateFare } from '@/lib/fare-calculator';
 import { Switch } from '@/components/ui/switch';
 import { SimulatedPayment } from '@/components/simulated-payment';
+import { API_ENDPOINTS } from '@/lib/api-config';
 
 type PassengerType = 'Men' | 'Child' | 'Women';
 
@@ -134,59 +134,62 @@ export function BookingForm() {
 
   const finalizeBooking = async () => {
     setIsLoading(true);
-    // Simulate slight delay for "generation"
-    setTimeout(() => {
-      try {
-        const busType = searchParams.get('type') || 'ordinary';
-        const routeNo = hyderabadLocalities.find(l => l.name === from)?.routeNumber || "00";
-        const ticketCode = `TKT-${routeNo}-${Math.floor(10000 + Math.random() * 90000)}`;
-        
-        const passengerSummary = Object.entries(quantities)
-          .filter(([, count]) => count > 0)
-          .map(([type, count]) => `${type}: ${count}`)
-          .join(', ');
+    try {
+      const busType = searchParams.get('type') || 'ordinary';
+      const routeNo = hyderabadLocalities.find(l => l.name === from)?.routeNumber || "00";
+      
+      const passengerSummary = Object.entries(quantities)
+        .filter(([, count]) => count > 0)
+        .map(([type, count]) => `${type}: ${count}`)
+        .join(', ');
 
-        const newTicket = {
-          ticketCode,
-          from,
-          to,
-          routeNo,
-          passengers: passengerSummary,
-          quantities,
-          totalFare,
-          fare: finalFare,
-          walletAmountUsed: useWallet ? Math.min(totalFare, walletBalance) : 0,
-          securityCode: securityCode.toUpperCase(),
-          busType,
-          status: 'valid',
-          createdAt: new Date().toISOString()
-        };
+      const bookingData = {
+        from,
+        to,
+        routeNo,
+        passengers: passengerSummary,
+        quantities,
+        totalFare,
+        fare: finalFare,
+        walletAmountUsed: useWallet ? Math.min(totalFare, walletBalance) : 0,
+        securityCode: securityCode.toUpperCase(),
+        busType
+      };
 
-        // Save to global history
-        const storedTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-        storedTickets.push(newTicket);
-        localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
+      const response = await fetch(API_ENDPOINTS.CREATE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData)
+      });
 
-        // Deduct wallet if used
-        if (useWallet && newTicket.walletAmountUsed > 0) {
-            const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
-            storedWallet.balance -= newTicket.walletAmountUsed;
-            storedWallet.transactions.push({
-                type: 'debit',
-                description: `Ticket booking ${ticketCode}`,
-                amount: newTicket.walletAmountUsed,
-                date: new Date().toISOString(),
-            });
-            localStorage.setItem('userWallet', JSON.stringify(storedWallet));
-        }
+      if (!response.ok) throw new Error("Server failed to create ticket");
+      const result = await response.json();
+      const ticket = result.ticket;
 
-        router.push(`/ticket?id=${ticketCode}`);
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save ticket locally.' });
-      } finally {
-        setIsLoading(false);
+      // Deduct wallet if used
+      if (useWallet && ticket.walletAmountUsed > 0) {
+          const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
+          storedWallet.balance -= ticket.walletAmountUsed;
+          storedWallet.transactions.push({
+              type: 'debit',
+              description: `Ticket booking ${ticket.ticketCode}`,
+              amount: ticket.walletAmountUsed,
+              date: new Date().toISOString(),
+          });
+          localStorage.setItem('userWallet', JSON.stringify(storedWallet));
       }
-    }, 1500);
+
+      // Save to local history for quick access
+      const storedTickets = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+      storedTickets.push(ticket);
+      localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
+
+      router.push(`/ticket?id=${ticket.ticketCode}`);
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Booking Failed', description: 'Could not communicate with server.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
