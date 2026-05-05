@@ -1,7 +1,5 @@
 /**
- * Root Server Redirect
- * This file redirects to the primary backend located in /BusConnect/server.js
- * to ensure consistency as per project requirements.
+ * RETIRED: Custom server.js is not needed for standard Next.js deployment.
+ * Use 'npm run dev' or 'next start' to run the app.
  */
-console.log(">>> PRIMARY SERVER STARTING (ROOT)");
-require("./BusConnect/server.js");
+console.log(">>> ROOT SERVER.JS RETIRED - USING NEXT.JS NATIVE ROUTING");

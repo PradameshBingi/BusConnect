@@ -18,17 +18,17 @@ if (!cached) {
 
 const ticketSchema = new mongoose.Schema({
   ticketCode: { type: String, unique: true, required: true },
-  from: String,
-  to: String,
+  from: { type: String, required: true },
+  to: { type: String, required: true },
   routeNo: String,
   passengers: String,
   quantities: Object,
   totalFare: Number,
-  fare: Number,
+  fare: { type: Number, required: true },
   walletAmountUsed: { type: Number, default: 0 },
-  securityCode: String,
-  busType: String,
-  status: { type: String, default: "valid" },
+  securityCode: { type: String, required: true },
+  busType: { type: String, required: true },
+  status: { type: String, default: "valid", enum: ["valid", "used", "expired", "cancelled"] },
   createdAt: { type: Date, default: Date.now },
   validatedAt: Date
 });
@@ -41,10 +41,11 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 10000, // 10s timeout
+      serverSelectionTimeoutMS: 8000, // 10s timeout for better UX
+      connectTimeoutMS: 10000,
     };
 
-    console.log("📡 Connecting to MongoDB...");
+    console.log("📡 Attempting MongoDB Connection...");
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       console.log("✅ MongoDB Connected Successfully");
       return mongooseInstance;
