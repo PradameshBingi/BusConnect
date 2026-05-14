@@ -85,17 +85,17 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-[550px]"
+        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[550px] max-h-[90vh]"
       >
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute top-4 right-4 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors bg-white/80"
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
 
         {/* Sidebar */}
-        <div className="w-full md:w-56 bg-slate-50 border-r border-slate-200 p-6 flex flex-col shrink-0">
+        <div className="w-full md:w-56 bg-slate-50 border-r border-slate-200 p-6 flex flex-col shrink-0 overflow-y-auto">
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-1">
               <ShieldCheck className="h-5 w-5 text-primary" />
@@ -111,7 +111,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
             <MethodTab active={method === 'Wallet'} onClick={() => setMethod('Wallet')} icon={<Wallet className="h-4 w-4" />} label="Wallet" />
           </nav>
 
-          <div className="mt-auto pt-6 border-t border-slate-200">
+          <div className="mt-auto pt-6 border-t border-slate-200 hidden md:block">
              <div className="flex items-center gap-2 text-slate-400 text-xs">
                 <Lock className="h-3 w-3" />
                 <span>SSL Secured</span>
@@ -120,7 +120,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
         </div>
 
         {/* Main Area */}
-        <div className="flex-1 flex flex-col bg-white relative min-w-0">
+        <div className="flex-1 flex flex-col bg-white relative min-w-0 overflow-y-auto">
           <AnimatePresence mode="wait">
             {status === 'idle' && (
               <motion.div 
@@ -144,7 +144,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
 
                 <Button 
                   onClick={handlePay}
-                  className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 mt-6 shrink-0"
+                  className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 mt-6 shrink-0 mb-4"
                 >
                   Pay Rs. {amount.toFixed(2)}
                 </Button>
@@ -156,7 +156,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
                 key="processing"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex flex-col items-center justify-center text-center space-y-6 p-8"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-6 p-8 min-h-[400px]"
               >
                 <div className="relative">
                   <Loader2 className="h-20 w-20 text-primary animate-spin" />
@@ -186,7 +186,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
                 key="success"
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 flex flex-col items-center justify-center text-center space-y-6 p-8"
+                className="flex-1 flex flex-col items-center justify-center text-center space-y-6 p-8 min-h-[400px]"
               >
                 <motion.div
                   initial={{ rotate: -20, opacity: 0 }}
@@ -247,7 +247,7 @@ function UPIDetails() {
 
       <div className="space-y-2">
         <Label className="text-xs uppercase text-slate-500 font-bold">Or enter UPI ID</Label>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Input placeholder="user@upi" className="flex-1" />
           <Button variant="outline" size="sm">Verify</Button>
         </div>
