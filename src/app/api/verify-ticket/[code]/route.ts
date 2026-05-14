@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -23,15 +24,16 @@ export async function GET(
       return NextResponse.json({ status: "invalid", message: "Ticket not found" }, { status: 404 });
     }
 
-    // Auto-expiry logic (10 minutes for prototype)
-    const now = new Date();
-    const createdAt = new Date(ticket.createdAt);
-    const expiryTime = new Date(createdAt.getTime() + 600000); 
+    // Auto-expiry logic: Mark as expired if not used within 10 minutes
+    if (ticket.status === 'valid') {
+        const now = new Date();
+        const createdAt = new Date(ticket.createdAt);
+        const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000); // 10 minutes
 
-    if (ticket.status === "valid" && now > expiryTime) {
-      ticket.status = "expired";
-      await ticket.save();
-      return NextResponse.json({ status: "expired", ticket });
+        if (now > expiryTime) {
+            ticket.status = 'expired';
+            await ticket.save();
+        }
     }
 
     return NextResponse.json({ status: ticket.status, ticket });
