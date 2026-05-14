@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -17,12 +18,24 @@ export async function POST(
     const ticket = await Ticket.findOne({ ticketCode });
     if (!ticket) return NextResponse.json({ status: "invalid" }, { status: 404 });
 
+    // Prevent using a ticket that is already used, cancelled, or expired
     if (ticket.status === "used") {
       return NextResponse.json({ status: "already_used", message: "Ticket already validated" }, { status: 400 });
     }
 
-    if (ticket.status === "expired" || ticket.status === "cancelled") {
-      return NextResponse.json({ status: ticket.status, message: `Ticket is ${ticket.status}` }, { status: 400 });
+    if (ticket.status === "cancelled") {
+      return NextResponse.json({ status: "cancelled", message: "Ticket is cancelled" }, { status: 400 });
+    }
+
+    // Final safety check for expiry before marking as used
+    const now = new Date();
+    const createdAt = new Date(ticket.createdAt);
+    const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000);
+    
+    if (now > expiryTime || ticket.status === 'expired') {
+        ticket.status = 'expired';
+        await ticket.save();
+        return NextResponse.json({ status: "expired", message: "Ticket has expired and cannot be validated" }, { status: 400 });
     }
 
     ticket.status = "used";
@@ -32,6 +45,7 @@ export async function POST(
     if (updateData.fare) ticket.fare = updateData.fare;
 
     await ticket.save();
+    console.log(`✅ Ticket ${ticketCode} marked as USED in database.`);
     
     return NextResponse.json({ status: "updated", ticket });
   } catch (err: any) {

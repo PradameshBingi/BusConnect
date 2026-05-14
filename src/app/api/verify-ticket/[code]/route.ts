@@ -28,11 +28,12 @@ export async function GET(
     if (ticket.status === 'valid') {
         const now = new Date();
         const createdAt = new Date(ticket.createdAt);
-        const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000); // 10 minutes
+        const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000); // 10 minutes window
 
         if (now > expiryTime) {
             ticket.status = 'expired';
             await ticket.save();
+            console.log(`⏰ Ticket ${ticketCode} automatically expired in database.`);
         }
     }
 

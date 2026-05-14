@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -48,37 +49,43 @@ export default function BookingHistoryPage() {
     setTickets([...storedTickets].reverse());
   };
 
-  useEffect(() => {
-    setIsClient(true);
-    loadLocalTickets();
-  }, []);
-
-  const syncStatuses = async () => {
-    setIsRefreshing(true);
+  const syncStatuses = async (silent = false) => {
+    if (!silent) setIsRefreshing(true);
     try {
       const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+      
+      // We only strictly need to sync tickets that are currently 'valid' to check for expiry or validation
       const updatedTickets = await Promise.all(storedTickets.map(async (t) => {
-        try {
-          const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
-          if (res.ok) {
-            const data = await res.json();
-            return { ...t, status: data.status };
+        if (t.status === 'valid') {
+          try {
+            const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
+            if (res.ok) {
+              const data = await res.json();
+              return { ...t, status: data.status };
+            }
+          } catch (e) {
+            console.error("Sync failed for", t.ticketCode);
           }
-        } catch (e) {
-          console.error("Sync failed for", t.ticketCode);
         }
         return t;
       }));
 
       localStorage.setItem('generatedTickets', JSON.stringify(updatedTickets));
       setTickets([...updatedTickets].reverse());
-      toast({ title: "Updated", description: "Ticket statuses synced with server." });
+      if (!silent) toast({ title: "Updated", description: "Ticket statuses synced with server." });
     } catch (error) {
-      toast({ variant: 'destructive', title: "Sync Error", description: "Could not reach server." });
+      if (!silent) toast({ variant: 'destructive', title: "Sync Error", description: "Could not reach server." });
     } finally {
       setIsRefreshing(false);
     }
   };
+
+  useEffect(() => {
+    setIsClient(true);
+    loadLocalTickets();
+    // Auto-sync on mount to catch any server-side expiry or conductor validations
+    setTimeout(() => syncStatuses(true), 500);
+  }, []);
 
   const handleCancelTicket = async (ticketCode: string) => {
     try {
@@ -142,7 +149,7 @@ export default function BookingHistoryPage() {
             <History className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-bold font-headline">Booking History</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={syncStatuses} disabled={isRefreshing}>
+          <Button variant="outline" size="sm" onClick={() => syncStatuses(false)} disabled={isRefreshing}>
             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
             Sync
           </Button>
