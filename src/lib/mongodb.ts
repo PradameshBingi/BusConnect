@@ -41,7 +41,6 @@ async function dbConnect() {
 
 export default dbConnect;
 
-// Model definition
 const TicketSchema = new mongoose.Schema({
   from: String,
   to: String,

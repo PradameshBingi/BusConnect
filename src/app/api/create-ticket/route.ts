@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -10,7 +9,6 @@ export async function POST(request: Request) {
     const Ticket = getTicketModel();
     const data = await request.json();
     
-    // Server-side generation of Ticket Code
     const routeNo = data.routeNo || "00";
     const randomSuffix = Math.floor(10000 + Math.random() * 90000);
     const ticketCode = `TKT-${routeNo}-${randomSuffix}`;

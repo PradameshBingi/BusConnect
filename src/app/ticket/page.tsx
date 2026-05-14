@@ -30,7 +30,6 @@ type Ticket = {
   walletAmountUsed?: number;
 };
 
-// Mark page as dynamic to ensure server-side data fetching works
 export const dynamic = "force-dynamic";
 
 function TicketContent() {
@@ -60,8 +59,9 @@ function TicketContent() {
         try {
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
             if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
                 if (response.status === 404) throw new Error("Ticket not found in database.");
-                throw new Error("Server communication error.");
+                throw new Error(errorData.error || "Server communication error.");
             }
             const result = await response.json();
             setTicket(result.ticket);

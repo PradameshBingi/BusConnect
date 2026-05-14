@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
-// FORCE dynamic mode to prevent static export errors
 export const dynamic = "force-dynamic";
 
 export async function POST(
