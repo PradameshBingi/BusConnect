@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/app/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, User, ShieldCheck, Wallet, ArrowUpCircle } from 'lucide-react';
+import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw } from 'lucide-react';
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { API_ENDPOINTS } from '@/lib/api-config';
 
 type TicketDetails = {
   ticketCode: string;
@@ -39,14 +40,47 @@ type TicketDetails = {
 export default function BookingHistoryPage() {
   const [tickets, setTickets] = useState<TicketDetails[]>([]);
   const [isClient, setIsClient] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+
+  const loadLocalTickets = () => {
+    const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+    setTickets([...storedTickets].reverse());
+  };
 
   useEffect(() => {
     setIsClient(true);
-    // Keep local records for quick browsing, but specific ticket view will fetch from server
-    const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-    setTickets(storedTickets.reverse());
+    loadLocalTickets();
   }, []);
+
+  const syncStatuses = async () => {
+    setIsRefreshing(true);
+    try {
+      const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+      const updatedTickets = await Promise.all(storedTickets.map(async (t) => {
+        if (t.status === 'used' || t.status === 'cancelled') return t;
+        
+        try {
+          const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
+          if (res.ok) {
+            const data = await res.json();
+            return { ...t, status: data.status };
+          }
+        } catch (e) {
+          console.error("Sync failed for", t.ticketCode);
+        }
+        return t;
+      }));
+
+      localStorage.setItem('generatedTickets', JSON.stringify(updatedTickets));
+      setTickets([...updatedTickets].reverse());
+      toast({ title: "Updated", description: "Ticket statuses synced with server." });
+    } catch (error) {
+      toast({ variant: 'destructive', title: "Sync Error", description: "Could not reach server." });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleCancelTicket = (ticketCode: string) => {
     const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
@@ -73,7 +107,7 @@ export default function BookingHistoryPage() {
       localStorage.setItem('userWallet', JSON.stringify(walletData));
     }
 
-    setTickets(storedTickets.reverse());
+    setTickets([...storedTickets].reverse());
     toast({ title: 'Success', description: 'Ticket cancelled and refunded.' });
   };
 
@@ -92,23 +126,35 @@ export default function BookingHistoryPage() {
     <>
       <Header showBackButton={true} backHref="/select-ticket-type" title="Booking History" />
       <div className="p-4 md:p-8 max-w-2xl mx-auto">
-        <div className="flex items-center gap-3 mb-6">
-          <History className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold font-headline">Booking History</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <History className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-bold font-headline">Booking History</h1>
+          </div>
+          <Button variant="outline" size="sm" onClick={syncStatuses} disabled={isRefreshing}>
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+            Sync
+          </Button>
         </div>
         {tickets.length === 0 ? (
           <Card><CardContent className="p-6 text-center">No local booking history found.</CardContent></Card>
         ) : (
           <div className="space-y-4">
             {tickets.map(ticket => {
-              const expiry = new Date(ticket.createdAt).getTime() + 60000;
+              // Standard 10 minute expiry logic for local display
+              const expiry = new Date(ticket.createdAt).getTime() + (10 * 60 * 1000);
               const isExpired = new Date().getTime() > expiry && ticket.status === 'valid';
               const status = isExpired ? 'expired' : ticket.status;
               const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
-              const canUpgrade = ticket.busType !== 'deluxe';
+              const canUpgrade = ticket.busType !== 'deluxe' && status === 'valid';
 
               return (
-              <Card key={ticket.ticketCode} className="border-l-4 border-l-primary shadow-sm">
+              <Card key={ticket.ticketCode} className={cn("border-l-4 shadow-sm", {
+                "border-l-green-600": status === 'valid',
+                "border-l-slate-400": status === 'used',
+                "border-l-yellow-500": status === 'expired',
+                "border-l-red-600": status === 'cancelled',
+              })}>
                 <CardHeader className="flex flex-row justify-between items-start p-4 pb-2">
                    <div>
                      <Link href={`/ticket?id=${ticket.ticketCode}`} className="font-mono font-bold text-primary hover:underline">{ticket.ticketCode}</Link>

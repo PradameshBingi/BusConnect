@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, Loader2 } from 'lucide-react';
+import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/app/components/header';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +37,7 @@ function TicketContent() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const id = searchParams.get('id');
 
@@ -49,30 +50,29 @@ function TicketContent() {
     }
   };
 
-  useEffect(() => {
-    if (!id) {
-        setLoading(false);
-        return;
-    }
-
-    const fetchTicket = async () => {
-        try {
-            const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                if (response.status === 404) throw new Error("Ticket not found in database.");
-                throw new Error(errorData.error || "Server communication error.");
-            }
-            const result = await response.json();
-            setTicket(result.ticket);
-        } catch (err: any) {
-            console.error("Fetch error:", err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
+  const fetchTicket = async (showToast = false) => {
+    if (!id) return;
+    if (showToast) setIsRefreshing(true);
+    try {
+        const response = await fetch(`${API_ENDPOINTS.VERIFY}/${id}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            if (response.status === 404) throw new Error("Ticket not found in database.");
+            throw new Error(errorData.error || "Server communication error.");
         }
-    };
+        const result = await response.json();
+        setTicket(result.ticket);
+        if (showToast) toast({ title: "Status Updated", description: `Current status: ${result.status}` });
+    } catch (err: any) {
+        console.error("Fetch error:", err);
+        setError(err.message);
+    } finally {
+        setLoading(false);
+        setIsRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTicket();
   }, [id]);
   
@@ -98,29 +98,56 @@ function TicketContent() {
   if (!ticket) return null;
 
   const issueDate = new Date(ticket.createdAt);
-  const expiryTimestamp = issueDate.getTime() + 60 * 1000 * 10;
+  // Synchronized 10 minute expiry
+  const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
   const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
   if (ticket.status === 'used') {
     return (
         <div className="flex flex-col items-center p-4 space-y-6">
-            <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold">JOURNEY VALIDATED</div>
+            <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                <TicketIcon className="h-5 w-5" />
+                JOURNEY VALIDATED
+            </div>
             <GeneratedTicket ticket={ticket as any} />
-            <Button asChild variant="outline" className="w-full max-w-sm"><Link href="/">Home</Link></Button>
+            <div className="flex flex-col gap-2 w-full max-w-sm">
+                <Button asChild variant="outline"><Link href="/booking-history">View History</Link></Button>
+                <Button asChild className="w-full"><Link href="/">Home</Link></Button>
+            </div>
         </div>
     );
   }
 
   return (
     <div className="flex flex-col items-center p-4 md:p-8">
-      <Card className={cn("w-full max-w-md border-t-8", 
-        ticket.status === 'valid' ? "border-t-primary" : "border-t-destructive"
-      )}>
-        <CardHeader className="text-center">
+      <Card className={cn("w-full max-w-md border-t-8", {
+        "border-t-green-600": ticket.status === 'valid' && !isCurrentlyExpired,
+        "border-t-yellow-500": isCurrentlyExpired,
+        "border-t-red-600": ticket.status === 'cancelled',
+        "border-t-slate-400": ticket.status === 'used',
+      })}>
+        <CardHeader className="text-center relative">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-4 top-4" 
+            onClick={() => fetchTicket(true)}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+          </Button>
           <CardTitle className="font-headline text-2xl uppercase">Digital Ticket</CardTitle>
-          {ticket.status === 'cancelled' && <div className="text-destructive font-bold">CANCELLED</div>}
-          {isCurrentlyExpired && <div className="text-yellow-600 font-bold">EXPIRED</div>}
+          <div className="flex justify-center mt-2">
+            <Badge className={cn("capitalize font-bold px-4 py-1", {
+                "bg-green-600 hover:bg-green-600": ticket.status === 'valid' && !isCurrentlyExpired,
+                "bg-yellow-500 hover:bg-yellow-500": isCurrentlyExpired,
+                "bg-red-600 hover:bg-red-600": ticket.status === 'cancelled',
+                "bg-slate-500 hover:bg-slate-500": ticket.status === 'used',
+            })}>
+                {isCurrentlyExpired ? 'expired' : ticket.status}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg">
