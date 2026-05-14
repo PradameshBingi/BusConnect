@@ -10,6 +10,7 @@ import { Search, CheckCircle, XCircle, Clock, Loader2, ArrowRight } from 'lucide
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
 
 export default function VerifyTicketPage() {
     const [ticketCode, setTicketCode] = useState('');
@@ -98,53 +99,63 @@ export default function VerifyTicketPage() {
             </Card>
         )}
 
-        {status === 'found' && (
-          <Card className="w-full max-w-md mt-4 overflow-hidden">
-            <CardHeader className="text-center bg-muted/30">
-              {ticket.status === 'valid' ? (
-                  <CheckCircle className="mx-auto text-green-500 h-12 w-12" />
-              ) : ticket.status === 'used' ? (
-                  <XCircle className="mx-auto text-orange-500 h-12 w-12" />
-              ) : (
-                  <Clock className="mx-auto text-yellow-500 h-12 w-12" />
-              )}
-              <CardTitle className="mt-2 text-2xl font-bold uppercase tracking-wider">{ticket.status}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                  <div className="text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground">FROM</p>
-                      <p className="font-bold">{ticket.from}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-primary" />
-                  <div className="text-center">
-                      <p className="text-[10px] font-bold text-muted-foreground">TO</p>
-                      <p className="font-bold">{ticket.to}</p>
-                  </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                  <p className="text-muted-foreground">Passengers:</p>
-                  <p className="font-bold text-right">{ticket.passengers}</p>
-                  <p className="text-muted-foreground">Fare Paid:</p>
-                  <p className="font-bold text-right text-primary">Rs. {ticket.totalFare?.toFixed(2)}</p>
-              </div>
-              <div className="border-t pt-4">
-                  <p className="text-[10px] text-center text-muted-foreground uppercase font-bold mb-1">Security PIN</p>
-                  <p className="text-3xl font-mono font-bold text-center tracking-widest text-primary">{ticket.securityCode}</p>
-              </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-2 bg-muted/10">
-              {ticket.status === 'valid' && (
-                  <Button onClick={handleValidate} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg" disabled={isLoading}>
-                      {isLoading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle className="mr-2 h-5 w-5" />}
-                      Validate Boarding
-                  </Button>
-              )}
-              <Button variant="outline" className="w-full" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null);}}>
-                  Clear and Search Next
-              </Button>
-            </CardFooter>
-          </Card>
+        {status === 'found' && ticket && (
+          <div className="w-full max-w-md mt-4 space-y-4">
+            {ticket.status === 'used' ? (
+                <div className="space-y-4">
+                    <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                        <CheckCircle className="h-5 w-5" />
+                        JOURNEY VALIDATED
+                    </div>
+                    <GeneratedTicket ticket={ticket} />
+                </div>
+            ) : (
+                <Card className="overflow-hidden">
+                    <CardHeader className="text-center bg-muted/30">
+                        {ticket.status === 'valid' ? (
+                            <CheckCircle className="mx-auto text-green-500 h-12 w-12" />
+                        ) : (
+                            <Clock className="mx-auto text-yellow-500 h-12 w-12" />
+                        )}
+                        <CardTitle className="mt-2 text-2xl font-bold uppercase tracking-wider">{ticket.status}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-6">
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">FROM</p>
+                                <p className="font-bold">{ticket.from}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-primary" />
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">TO</p>
+                                <p className="font-bold">{ticket.to}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                            <p className="text-muted-foreground">Passengers:</p>
+                            <p className="font-bold text-right">{ticket.passengers}</p>
+                            <p className="text-muted-foreground">Fare Paid:</p>
+                            <p className="font-bold text-right text-primary">Rs. {ticket.totalFare?.toFixed(2)}</p>
+                        </div>
+                        <div className="border-t pt-4">
+                            <p className="text-[10px] text-center text-muted-foreground uppercase font-bold mb-1">Security PIN</p>
+                            <p className="text-3xl font-mono font-bold text-center tracking-widest text-primary">{ticket.securityCode}</p>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-2 bg-muted/10">
+                        {ticket.status === 'valid' && (
+                            <Button onClick={handleValidate} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                                Validate Boarding
+                            </Button>
+                        )}
+                    </CardFooter>
+                </Card>
+            )}
+            <Button variant="outline" className="w-full" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null);}}>
+                Clear and Search Next
+            </Button>
+          </div>
         )}
       </div>
     </>

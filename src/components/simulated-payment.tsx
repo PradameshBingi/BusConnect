@@ -85,11 +85,11 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[550px] max-h-[90vh]"
+        className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row h-auto md:h-[550px] max-h-[95vh]"
       >
         <button 
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-1 rounded-full hover:bg-gray-100 transition-colors bg-white/80"
+          className="absolute top-4 right-4 z-20 p-1 rounded-full hover:bg-gray-100 transition-colors bg-white/80"
         >
           <X className="h-5 w-5 text-gray-500" />
         </button>
@@ -110,13 +110,6 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
             <MethodTab active={method === 'Netbanking'} onClick={() => setMethod('Netbanking')} icon={<Building2 className="h-4 w-4" />} label="Netbanking" />
             <MethodTab active={method === 'Wallet'} onClick={() => setMethod('Wallet')} icon={<Wallet className="h-4 w-4" />} label="Wallet" />
           </nav>
-
-          <div className="mt-auto pt-6 border-t border-slate-200 hidden md:block">
-             <div className="flex items-center gap-2 text-slate-400 text-xs">
-                <Lock className="h-3 w-3" />
-                <span>SSL Secured</span>
-             </div>
-          </div>
         </div>
 
         {/* Main Area */}
@@ -135,7 +128,7 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
                   <p className="text-sm text-slate-500">Order ID: #{Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
                 </div>
 
-                <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+                <div className="flex-1 overflow-y-auto pr-2">
                   {method === 'UPI' && <UPIDetails />}
                   {method === 'Card' && <CardDetails />}
                   {method === 'Netbanking' && <NetbankingDetails />}
@@ -199,9 +192,6 @@ export function SimulatedPayment({ isOpen, onClose, onComplete, amount }: Simula
                   <h3 className="text-2xl font-bold text-slate-900 mb-2">Payment Successful</h3>
                   <p className="text-slate-500">Redirecting to your ticket details...</p>
                 </div>
-                <div className="bg-slate-50 px-6 py-3 rounded-full text-sm font-medium text-slate-600 border border-slate-200">
-                  Ref No: {Math.floor(100000000 + Math.random() * 900000000)}
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -224,60 +214,21 @@ function MethodTab({ active, onClick, icon, label }: { active: boolean; onClick:
     >
       <span className={cn(active ? "text-primary" : "text-slate-400")}>{icon}</span>
       {label}
-      {active && <motion.div layoutId="active-indicator" className="ml-auto"><ChevronRight className="h-4 w-4" /></motion.div>}
     </button>
   );
 }
 
 function UPIDetails() {
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
-
   return (
     <div className="space-y-6 pb-4">
       <div className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-xl border border-slate-200">
         <QrCode className="h-32 w-32 text-slate-400 mb-2" />
         <p className="text-[10px] uppercase font-bold text-slate-400">Scan QR to pay</p>
       </div>
-      
-      <div className="grid grid-cols-3 gap-3">
-        <UpiApp label="GPay" selected={selectedApp === 'GPay'} onClick={() => setSelectedApp('GPay')} />
-        <UpiApp label="PhonePe" selected={selectedApp === 'PhonePe'} onClick={() => setSelectedApp('PhonePe')} />
-        <UpiApp label="Paytm" selected={selectedApp === 'Paytm'} onClick={() => setSelectedApp('Paytm')} />
-      </div>
-
       <div className="space-y-2">
         <Label className="text-xs uppercase text-slate-500 font-bold">Or enter UPI ID</Label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Input placeholder="user@upi" className="flex-1" />
-          <Button variant="outline" size="sm">Verify</Button>
-        </div>
+        <Input placeholder="user@upi" className="w-full" />
       </div>
-    </div>
-  );
-}
-
-function UpiApp({ label, selected, onClick }: { label: string; selected?: boolean; onClick: () => void }) {
-  return (
-    <div 
-      onClick={onClick}
-      className={cn(
-        "flex flex-col items-center gap-2 p-3 rounded-lg border transition-all cursor-pointer group",
-        selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-slate-200 hover:border-primary hover:bg-slate-50"
-      )}
-    >
-      <div className={cn(
-        "w-10 h-10 rounded-full flex items-center justify-center transition-colors",
-        selected ? "bg-primary/20" : "bg-slate-200 group-hover:bg-primary/10"
-      )}>
-        <Smartphone className={cn(
-          "h-5 w-5 transition-colors",
-          selected ? "text-primary" : "text-slate-400 group-hover:text-primary"
-        )} />
-      </div>
-      <span className={cn(
-        "text-[10px] font-bold transition-colors",
-        selected ? "text-primary" : "text-slate-600"
-      )}>{label}</span>
     </div>
   );
 }
@@ -287,10 +238,7 @@ function CardDetails() {
     <div className="space-y-4 pb-4">
       <div className="space-y-2">
         <Label className="text-xs uppercase text-slate-500 font-bold">Card Number</Label>
-        <div className="relative">
-          <Input placeholder="0000 0000 0000 0000" />
-          <CreditCard className="absolute right-3 top-2.5 h-5 w-5 text-slate-400" />
-        </div>
+        <Input placeholder="0000 0000 0000 0000" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -312,40 +260,17 @@ function CardDetails() {
 
 function NetbankingDetails() {
   const banks = ['HDFC Bank', 'ICICI Bank', 'SBI', 'Axis Bank', 'Kotak Bank'];
-  const [selectedBank, setSelectedBank] = useState<string | null>(null);
-
   return (
     <div className="space-y-4 pb-4">
-      <Label className="text-xs uppercase text-slate-500 font-bold">Popular Banks</Label>
+      <Label className="text-xs uppercase text-slate-500 font-bold">Select Bank</Label>
       <div className="grid grid-cols-1 gap-2">
         {banks.map(bank => (
           <div 
             key={bank} 
-            onClick={() => setSelectedBank(bank)}
-            className={cn(
-              "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all",
-              selectedBank === bank ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-slate-200 hover:border-primary hover:bg-slate-50"
-            )}
+            className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-primary cursor-pointer transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className={cn(
-                "w-8 h-8 rounded flex items-center justify-center transition-colors",
-                selectedBank === bank ? "bg-primary/20" : "bg-slate-100"
-              )}>
-                <Building2 className={cn(
-                  "h-4 w-4 transition-colors",
-                  selectedBank === bank ? "text-primary" : "text-slate-400"
-                )} />
-              </div>
-              <span className={cn(
-                "text-sm font-medium transition-colors",
-                selectedBank === bank ? "text-primary font-bold" : "text-slate-700"
-              )}>{bank}</span>
-            </div>
-            <ChevronRight className={cn(
-              "h-4 w-4 transition-colors",
-              selectedBank === bank ? "text-primary" : "text-slate-300"
-            )} />
+            <span className="text-sm font-medium">{bank}</span>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
           </div>
         ))}
       </div>
@@ -354,48 +279,17 @@ function NetbankingDetails() {
 }
 
 function WalletDetails() {
-  const [selectedWallet, setSelectedWallet] = useState<string | null>(null);
-
   return (
     <div className="space-y-4 pb-4">
       <p className="text-sm text-slate-500">Pay using your saved digital wallets.</p>
       <div className="grid grid-cols-1 gap-2">
-        <WalletOption label="Amazon Pay" selected={selectedWallet === 'Amazon Pay'} onClick={() => setSelectedWallet('Amazon Pay')} />
-        <WalletOption label="Mobikwik" selected={selectedWallet === 'Mobikwik'} onClick={() => setSelectedWallet('Mobikwik')} />
-        <WalletOption label="Freecharge" selected={selectedWallet === 'Freecharge'} onClick={() => setSelectedWallet('Freecharge')} />
+        {['Amazon Pay', 'Paytm', 'PhonePe'].map(wallet => (
+          <div key={wallet} className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-primary cursor-pointer transition-all">
+            <span className="text-sm font-medium">{wallet}</span>
+            <ChevronRight className="h-4 w-4 text-slate-300" />
+          </div>
+        ))}
       </div>
-    </div>
-  );
-}
-
-function WalletOption({ label, selected, onClick }: { label: string; selected?: boolean; onClick: () => void }) {
-  return (
-    <div 
-      onClick={onClick}
-      className={cn(
-        "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all",
-        selected ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-slate-200 hover:border-primary hover:bg-slate-50"
-      )}
-    >
-      <div className="flex items-center gap-3">
-        <div className={cn(
-          "w-8 h-8 rounded flex items-center justify-center transition-colors",
-          selected ? "bg-primary/20" : "bg-slate-100"
-        )}>
-          <Wallet className={cn(
-            "h-4 w-4 transition-colors",
-            selected ? "text-primary" : "text-slate-400"
-          )} />
-        </div>
-        <span className={cn(
-          "text-sm font-medium transition-colors",
-          selected ? "text-primary font-bold" : "text-slate-700"
-        )}>{label}</span>
-      </div>
-      <ChevronRight className={cn(
-        "h-4 w-4 transition-colors",
-        selected ? "text-primary" : "text-slate-300"
-      )} />
     </div>
   );
 }
