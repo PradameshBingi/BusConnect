@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Calendar, Clock, Ticket as TicketIcon, User, Tag, ShieldCheck, Copy, Bus, XCircle, Wallet, ArrowUpCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/app/components/header';
@@ -98,7 +99,7 @@ function TicketContent() {
   if (!ticket) return null;
 
   const issueDate = new Date(ticket.createdAt);
-  // Synchronized 10 minute expiry
+  // Standard 10 minute expiry
   const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
   const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
