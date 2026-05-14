@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { FileX, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
+import { API_ENDPOINTS } from '@/lib/api-config';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,8 +62,18 @@ export default function TicketCancellationPage() {
     }, 1000);
   };
 
-  const handleCancellation = () => {
+  const handleCancellation = async () => {
+    setIsLoading(true);
     try {
+      const res = await fetch(`${API_ENDPOINTS.CANCEL}/${ticketCode.toUpperCase()}`, {
+        method: 'POST',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Server rejected cancellation");
+      }
+
       const storedTickets: any[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       const ticketIndex = storedTickets.findIndex(t => t.ticketCode === ticketCode.toUpperCase());
 
@@ -71,45 +81,36 @@ export default function TicketCancellationPage() {
         const ticketToCancel = storedTickets[ticketIndex];
         const fare = ticketToCancel.totalFare || ticketToCancel.fare || 0;
         let refundAmount = 0;
-        let toastDescription = `Ticket ${ticketCode.toUpperCase()} has been cancelled.`;
-
-        // 10% cancellation fee on the original total fare
-        const cancellationFee = fare > 0 ? fare * 0.10 : 0;
         
-        // Refund is based on what was actually paid
+        const cancellationFee = fare > 0 ? fare * 0.10 : 0;
         const amountPaid = ticketToCancel.fare;
         if (amountPaid > 0) {
             refundAmount = Math.max(0, amountPaid - cancellationFee);
         }
 
-        // Mark ticket as cancelled
         storedTickets[ticketIndex].status = 'cancelled';
         localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
         
         if (refundAmount > 0) {
-            try {
-                const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "refunds":[], "transactions":[]}');
-                walletData.balance += refundAmount;
-                walletData.transactions = walletData.transactions || [];
-                walletData.transactions.push({
-                    type: 'credit',
-                    description: `Refund for ${ticketCode.toUpperCase()}`,
-                    amount: refundAmount,
-                    date: new Date().toISOString(),
-                });
-                localStorage.setItem('userWallet', JSON.stringify(walletData));
-                toastDescription += ` An amount of Rs. ${refundAmount.toFixed(2)} has been credited to your wallet.`
-            } catch(e) {
-                console.error("Failed to update wallet balance:", e);
-                toastDescription += ` Failed to credit your wallet automatically.`
-            }
+            const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
+            walletData.balance += refundAmount;
+            walletData.transactions = walletData.transactions || [];
+            walletData.transactions.push({
+                type: 'credit',
+                description: `Refund for ${ticketCode.toUpperCase()}`,
+                amount: refundAmount,
+                date: new Date().toISOString(),
+            });
+            localStorage.setItem('userWallet', JSON.stringify(walletData));
         }
 
         setStatus('cancelled');
-        toast({ title: 'Success', description: toastDescription });
+        toast({ title: 'Success', description: `Ticket cancelled. Refund of Rs. ${refundAmount.toFixed(2)} added to wallet.` });
       }
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to cancel the ticket.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -119,21 +120,21 @@ export default function TicketCancellationPage() {
         return (
           <div className="text-center text-destructive flex flex-col items-center gap-2">
             <XCircle className="h-10 w-10" />
-            <p>Ticket not found. Please check the code and try again.</p>
+            <p>Ticket not found in local history.</p>
           </div>
         );
        case 'invalid_security':
         return (
           <div className="text-center text-destructive flex flex-col items-center gap-2">
             <XCircle className="h-10 w-10" />
-            <p>The security code is incorrect. Please try again.</p>
+            <p>The security code is incorrect.</p>
           </div>
         );
       case 'already_used':
         return (
           <div className="text-center text-orange-500 flex flex-col items-center gap-2">
             <XCircle className="h-10 w-10" />
-            <p>This ticket cannot be cancelled as it's already used, expired, or cancelled.</p>
+            <p>This ticket cannot be cancelled as it's already used or expired.</p>
           </div>
         );
       case 'cancelled':
@@ -146,16 +147,19 @@ export default function TicketCancellationPage() {
       case 'found':
         return (
           <div className="text-center text-foreground">
-            <p className="mb-4">Are you sure you want to cancel ticket <span className="font-bold">{ticketCode.toUpperCase()}</span>? This action cannot be undone.</p>
+            <p className="mb-4">Are you sure you want to cancel ticket <span className="font-bold">{ticketCode.toUpperCase()}</span>?</p>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Proceed with Cancellation</Button>
+                <Button variant="destructive" disabled={isLoading}>
+                  {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                  Confirm Cancellation
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Confirm Cancellation</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action is permanent. A 10% cancellation fee will be applied and the remaining amount will be credited to your wallet (if applicable).
+                    A 10% fee applies. Remaining amount will be credited to your wallet.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

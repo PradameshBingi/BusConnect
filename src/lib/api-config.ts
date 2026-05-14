@@ -6,5 +6,6 @@
 export const API_ENDPOINTS = {
   CREATE: '/api/create-ticket',
   VERIFY: '/api/verify-ticket', // Note: Append /<code> dynamically
-  USE: '/api/use-ticket'        // Note: Append /<code> dynamically
+  USE: '/api/use-ticket',       // Note: Append /<code> dynamically
+  CANCEL: '/api/cancel-ticket'  // Note: Append /<code> dynamically
 };

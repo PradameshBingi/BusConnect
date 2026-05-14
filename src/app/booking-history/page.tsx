@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/app/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw } from 'lucide-react';
+import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { cn } from '@/lib/utils';
 import {
@@ -58,8 +58,6 @@ export default function BookingHistoryPage() {
     try {
       const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       const updatedTickets = await Promise.all(storedTickets.map(async (t) => {
-        if (t.status === 'used' || t.status === 'cancelled') return t;
-        
         try {
           const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
           if (res.ok) {
@@ -82,33 +80,46 @@ export default function BookingHistoryPage() {
     }
   };
 
-  const handleCancelTicket = (ticketCode: string) => {
-    const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-    const index = storedTickets.findIndex(t => t.ticketCode === ticketCode);
-    if (index === -1) return;
-
-    const ticket = storedTickets[index];
-    const totalPaid = (ticket.fare || 0) + (ticket.walletAmountUsed || 0);
-    const refundAmount = Math.max(0, totalPaid - Math.round(ticket.totalFare * 0.10));
-
-    storedTickets[index].status = 'cancelled';
-    localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
-
-    if (refundAmount > 0) {
-      const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
-      walletData.balance += refundAmount;
-      walletData.transactions = walletData.transactions || [];
-      walletData.transactions.push({
-        type: 'credit',
-        description: `Refund for ${ticketCode}`,
-        amount: refundAmount,
-        date: new Date().toISOString(),
+  const handleCancelTicket = async (ticketCode: string) => {
+    try {
+      const res = await fetch(`${API_ENDPOINTS.CANCEL}/${ticketCode}`, {
+        method: 'POST',
       });
-      localStorage.setItem('userWallet', JSON.stringify(walletData));
-    }
 
-    setTickets([...storedTickets].reverse());
-    toast({ title: 'Success', description: 'Ticket cancelled and refunded.' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Failed to cancel ticket on server");
+      }
+
+      const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+      const index = storedTickets.findIndex(t => t.ticketCode === ticketCode);
+      if (index === -1) return;
+
+      const ticket = storedTickets[index];
+      const totalPaid = (ticket.fare || 0) + (ticket.walletAmountUsed || 0);
+      const refundAmount = Math.max(0, totalPaid - Math.round(ticket.totalFare * 0.10));
+
+      storedTickets[index].status = 'cancelled';
+      localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
+
+      if (refundAmount > 0) {
+        const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
+        walletData.balance += refundAmount;
+        walletData.transactions = walletData.transactions || [];
+        walletData.transactions.push({
+          type: 'credit',
+          description: `Refund for ${ticketCode}`,
+          amount: refundAmount,
+          date: new Date().toISOString(),
+        });
+        localStorage.setItem('userWallet', JSON.stringify(walletData));
+      }
+
+      setTickets([...storedTickets].reverse());
+      toast({ title: 'Success', description: 'Ticket cancelled and refunded to wallet.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Cancellation Failed', description: error.message });
+    }
   };
 
   const getFullBusType = (type: string) => {
@@ -141,7 +152,6 @@ export default function BookingHistoryPage() {
         ) : (
           <div className="space-y-4">
             {tickets.map(ticket => {
-              // Standard 10 minute expiry logic for local display
               const expiry = new Date(ticket.createdAt).getTime() + (10 * 60 * 1000);
               const isExpired = new Date().getTime() > expiry && ticket.status === 'valid';
               const status = isExpired ? 'expired' : ticket.status;
