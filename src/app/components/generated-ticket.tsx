@@ -27,7 +27,6 @@ const depotNames = [
     'Dilsukhnagar', 'Mehdipatnam', 'Secunderabad', 'Kukatpally', 'Uppal', 'LB Nagar', 'Charminar', 'Miyapur'
 ];
 
-// A simple SVG to mimic the circular stamp
 const BusStamp = () => (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-15 text-red-600 pointer-events-none">
         <svg width="140" height="140" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -38,7 +37,6 @@ const BusStamp = () => (
         </svg>
     </div>
 );
-
 
 export function GeneratedTicket({ ticket, refundCode }: GeneratedTicketProps) {
     const issueDate = new Date(ticket.createdAt);
@@ -58,39 +56,34 @@ export function GeneratedTicket({ ticket, refundCode }: GeneratedTicketProps) {
     const serviceNumber = useMemo(() => `${ticket.from.substring(0,2)}${ticket.to.substring(0,2)}`.toUpperCase() + (pseudoRandom % 100), [pseudoRandom, ticket.from, ticket.to]);
     const tripNo = useMemo(() => (pseudoRandom % 5) + 1, [pseudoRandom]);
 
-    const fromLocality = hyderabadLocalities.find(l => l.name === ticket.from);
-    const toLocality = hyderabadLocalities.find(l => l.name === ticket.to);
-    
-    let menFare = 0;
-    let childFare = 0;
-    let womenFare = 0;
+    // UNIFIED FARE CALCULATION LOGIC
+    const { menRate, childRate, womenRate } = useMemo(() => {
+        const fromLocality = hyderabadLocalities.find(l => l.name === ticket.from);
+        const toLocality = hyderabadLocalities.find(l => l.name === ticket.to);
+        
+        if (!fromLocality || !toLocality) return { menRate: 0, childRate: 0, womenRate: 0 };
 
-    if (fromLocality && toLocality) {
         const distance = Math.abs(parseInt(fromLocality.routeNumber, 10) - parseInt(toLocality.routeNumber, 10));
         const baseFare = 10 + distance * 1.5;
-        
         const ordinaryAdultFare = Math.round(Math.max(10, baseFare));
         const ordinaryChildFare = Math.round(ordinaryAdultFare / 2);
-        
-        const expressSurcharge = 5;
-        const deluxeSurcharge = 10;
-        const deluxeChildSurcharge = 5;
 
-        menFare = ordinaryAdultFare;
-        childFare = ordinaryChildFare;
-        
+        let mRate = ordinaryAdultFare;
+        let cRate = ordinaryChildFare;
+        let wRate = 0;
+
         if (ticket.busType === 'express') {
-            menFare += expressSurcharge;
-            childFare = Math.round(ordinaryChildFare + expressSurcharge / 2);
-            womenFare = 0;
+            mRate += 5;
+            cRate = Math.round(ordinaryChildFare + 2.5);
+            wRate = 0;
         } else if (ticket.busType === 'deluxe') {
-            menFare += deluxeSurcharge;
-            womenFare = ordinaryAdultFare + deluxeSurcharge;
-            childFare = ordinaryChildFare + deluxeChildSurcharge;
-        } else { // ordinary
-             womenFare = 0;
+            mRate += 10;
+            cRate = ordinaryChildFare + 5;
+            wRate = ordinaryAdultFare + 10;
         }
-    }
+
+        return { menRate: mRate, childRate: cRate, womenRate: wRate };
+    }, [ticket.from, ticket.to, ticket.busType]);
     
     const getFullBusType = (type: string) => {
         switch (type) {
@@ -101,10 +94,8 @@ export function GeneratedTicket({ ticket, refundCode }: GeneratedTicketProps) {
         }
     };
 
-
     return (
         <div className="bg-white text-black p-4 font-mono max-w-sm mx-auto shadow-lg rounded-lg border-2 border-dashed border-gray-300 relative overflow-hidden">
-             {/* Pink serrated edge effect */}
             <div className="absolute top-0 left-0 bottom-0 w-2 bg-repeat-y" style={{backgroundImage: 'linear-gradient(135deg, #ffc0cb 50%, transparent 50%), linear-gradient(-135deg, #ffc0cb 50%, transparent 50%)', backgroundSize: '8px 8px'}}></div>
             <div className="absolute top-0 right-0 bottom-0 w-2 bg-repeat-y" style={{backgroundImage: 'linear-gradient(-45deg, #ffc0cb 50%, transparent 50%), linear-gradient(45deg, #ffc0cb 50%, transparent 50%)', backgroundSize: '8px 8px'}}></div>
 
@@ -135,10 +126,10 @@ export function GeneratedTicket({ ticket, refundCode }: GeneratedTicketProps) {
                 </div>
                 
                 <div className="text-left my-2 text-sm">
-                    {ticket.quantities.Men > 0 && <p>MEN: {ticket.quantities.Men} x {menFare.toFixed(2)} = {(ticket.quantities.Men * menFare).toFixed(2)}</p>}
-                    {ticket.quantities.Child > 0 && <p>CHILD: {ticket.quantities.Child} x {childFare.toFixed(2)} = {(ticket.quantities.Child * childFare).toFixed(2)}</p>}
+                    {ticket.quantities.Men > 0 && <p>MEN: {ticket.quantities.Men} x {menRate.toFixed(2)} = {(ticket.quantities.Men * menRate).toFixed(2)}</p>}
+                    {ticket.quantities.Child > 0 && <p>CHILD: {ticket.quantities.Child} x {childRate.toFixed(2)} = {(ticket.quantities.Child * childRate).toFixed(2)}</p>}
                     {ticket.quantities.Women > 0 && (
-                        <p>WOMEN: {ticket.quantities.Women} x {womenFare.toFixed(2)} = {(ticket.quantities.Women * womenFare).toFixed(2)} {womenFare === 0 && ticket.quantities.Women > 0 && <span className="font-bold text-green-600 ml-2">FREE</span>}</p>
+                        <p>WOMEN: {ticket.quantities.Women} x {womenRate.toFixed(2)} = {(ticket.quantities.Women * womenRate).toFixed(2)} {womenRate === 0 && <span className="font-bold text-green-600 ml-2">FREE</span>}</p>
                     )}
                 </div>
 

@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Wallet, ArrowUpCircle, Loader2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { SimulatedPayment } from '@/components/simulated-payment';
+import { API_ENDPOINTS } from '@/lib/api-config';
 
 type Ticket = {
   from: string;
@@ -83,28 +84,29 @@ export function UpgradeForm({ ticket }: { ticket: Ticket }) {
         }
     };
 
-    const finalizeUpgrade = (optParam?: any) => {
+    const finalizeUpgrade = async (optParam?: any) => {
         const opt = optParam || selectedUpgrade;
         if (!opt) return;
 
         setIsLoading(opt.name);
         try {
-            const storedTickets: Ticket[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
-            const ticketIndex = storedTickets.findIndex(t => t.ticketCode === ticket.ticketCode);
-            if (ticketIndex === -1) throw new Error("Original ticket not found.");
+            // 1. Sync with Database First
+            const response = await fetch(`${API_ENDPOINTS.USE}/${ticket.ticketCode}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    busType: opt.name,
+                    totalFare: opt.newTotalFare,
+                    fare: ticket.fare + opt.amountToPay
+                })
+            });
 
-            const upgradedTicket: Ticket = {
-                ...ticket,
-                busType: opt.name,
-                totalFare: opt.newTotalFare,
-                fare: ticket.fare + opt.amountToPay,
-                walletAmountUsed: (ticket.walletAmountUsed || 0) + opt.walletUsedForUpgrade,
-                createdAt: new Date().toISOString(), // Reset timer on upgrade
-            };
+            if (!response.ok) throw new Error("Database update failed.");
+            
+            const result = await response.json();
+            const updatedDbTicket = result.ticket;
 
-            storedTickets[ticketIndex] = upgradedTicket;
-            localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
-
+            // 2. Update Wallet if used
             if (useWallet && opt.walletUsedForUpgrade > 0) {
                 const storedWallet = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions": []}');
                 storedWallet.balance -= opt.walletUsedForUpgrade;
@@ -116,10 +118,17 @@ export function UpgradeForm({ ticket }: { ticket: Ticket }) {
                 });
                 localStorage.setItem('userWallet', JSON.stringify(storedWallet));
             }
+
+            // 3. Update Local History
+            const storedTickets: Ticket[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+            const ticketIndex = storedTickets.findIndex(t => t.ticketCode === ticket.ticketCode);
+            if (ticketIndex > -1) {
+                storedTickets[ticketIndex] = updatedDbTicket;
+                localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
+            }
             
-            const encodedData = btoa(JSON.stringify(upgradedTicket));
-            toast({ title: "Upgrade Successful!", description: `Upgraded to ${opt.title}. Timer restarted.` });
-            router.push(`/ticket?id=${ticket.ticketCode}&data=${encodedData}`);
+            toast({ title: "Upgrade Successful!", description: `Ticket upgraded to ${opt.title}.` });
+            router.push(`/ticket?id=${ticket.ticketCode}`);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Upgrade Failed', description: error.message });
             setIsLoading(null);

@@ -41,11 +41,13 @@ export async function POST(
     ticket.status = "used";
     ticket.validatedAt = new Date();
 
+    // CRITICAL: Update database with actual boarding details and total fare
     if (updateData.busType) ticket.busType = updateData.busType;
+    if (updateData.totalFare) ticket.totalFare = updateData.totalFare;
     if (updateData.fare) ticket.fare = updateData.fare;
 
     await ticket.save();
-    console.log(`✅ Ticket ${ticketCode} marked as USED in database.`);
+    console.log(`✅ Ticket ${ticketCode} marked as USED with total fare Rs. ${ticket.totalFare}`);
     
     return NextResponse.json({ status: "updated", ticket });
   } catch (err: any) {

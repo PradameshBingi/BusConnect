@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +43,7 @@ export default function FareCheckPage() {
   const [status, setStatus] = useState<VerificationStatus>('idle');
   const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(null);
   const [fareDifference, setFareDifference] = useState(0);
+  const [calculatedTotal, setCalculatedTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -84,6 +86,7 @@ export default function FareCheckPage() {
             const currentTotalPaid = foundTicket.totalFare || (foundTicket.fare + (foundTicket.walletAmountUsed || 0));
             const difference = actualFare - currentTotalPaid;
             setFareDifference(difference);
+            setCalculatedTotal(actualFare);
             setStatus('result');
         } else {
             setStatus(foundTicket.status as any);
@@ -104,16 +107,15 @@ export default function FareCheckPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 busType: actualBusType,
+                totalFare: calculatedTotal, // Update total value in DB
                 fare: (ticketDetails.fare || 0) + (fareDifference > 0 ? fareDifference : 0)
             })
         });
 
         if (!response.ok) throw new Error("Validation failed");
-        const result = await response.json();
-
+        
         setStatus('validated');
-        setTicketDetails(result.ticket);
-        toast({ title: "Success", description: "Ticket marked as USED in database." });
+        toast({ title: "Success", description: "Journey validated and database updated." });
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not update database.' });
     } finally {
@@ -132,17 +134,13 @@ export default function FareCheckPage() {
   const getStatusContent = () => {
     if (status === 'idle' || status === 'loading') return null;
     
-    if ((status === 'validated' || status === 'used' || status === 'cancelled') && ticketDetails) {
-        const isCancelled = status === 'cancelled' || ticketDetails.status === 'cancelled';
+    if (status === 'validated' || status === 'used' || status === 'cancelled') {
+        const isCancelled = status === 'cancelled' || (ticketDetails && ticketDetails.status === 'cancelled');
         return (
-            <div className="space-y-4 w-full max-w-md">
-                <Card className={cn("border-t-8", isCancelled ? "border-t-red-600" : "border-t-slate-400")}>
-                    <CardHeader className="text-center p-10">
-                        <CardTitle className={cn("text-3xl font-bold uppercase", isCancelled ? "text-red-600" : "text-slate-500")}>
-                            TICKET {isCancelled ? 'CANCELLED' : 'USED'}
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
+            <div className="space-y-4 w-full max-w-md text-center">
+                <h1 className={cn("text-4xl font-bold uppercase tracking-widest", isCancelled ? "text-red-600" : "text-slate-500")}>
+                    TICKET {isCancelled ? 'CANCELLED' : 'USED'}
+                </h1>
             </div>
         );
     }
@@ -159,17 +157,8 @@ export default function FareCheckPage() {
 
     if (status === 'expired') {
         return (
-            <div className="space-y-4 w-full max-w-md">
-                <div className="bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2 border border-yellow-200">
-                    <Clock className="h-5 w-5" />
-                    TICKET EXPIRED
-                </div>
-                {ticketDetails && (
-                     <Card className="p-4 bg-white text-center">
-                        <p className="font-bold">{ticketDetails.ticketCode}</p>
-                        <p className="text-sm text-muted-foreground">Issued: {new Date(ticketDetails.createdAt).toLocaleString()}</p>
-                     </Card>
-                )}
+            <div className="space-y-4 w-full max-w-md text-center">
+                <h1 className="text-4xl font-bold uppercase tracking-widest text-yellow-500">TICKET EXPIRED</h1>
             </div>
         );
     }
@@ -219,7 +208,10 @@ export default function FareCheckPage() {
                              </div>
                              <div className="flex items-center justify-end gap-2">
                                 <Tag className="h-4 w-4 text-muted-foreground" />
-                                <p className="font-bold">Paid: Rs. {ticketDetails.totalFare?.toFixed(2)}</p>
+                                <div className="text-right">
+                                    <p className="text-muted-foreground text-[10px]">NEW TOTAL:</p>
+                                    <p className="font-bold text-lg">Rs. {calculatedTotal.toFixed(2)}</p>
+                                </div>
                              </div>
                         </div>
                     </div>
