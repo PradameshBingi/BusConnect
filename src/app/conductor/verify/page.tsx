@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +9,8 @@ import { Search, CheckCircle, XCircle, Clock, Loader2, ArrowRight } from 'lucide
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { GeneratedTicket } from '@/app/components/generated-ticket';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export default function VerifyTicketPage() {
     const [ticketCode, setTicketCode] = useState('');
@@ -102,13 +102,29 @@ export default function VerifyTicketPage() {
         {status === 'found' && ticket && (
           <div className="w-full max-w-md mt-4 space-y-4">
             {ticket.status === 'used' ? (
-                <div className="space-y-4">
-                    <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
-                        <CheckCircle className="h-5 w-5" />
-                        JOURNEY VALIDATED
-                    </div>
-                    <GeneratedTicket ticket={ticket} />
-                </div>
+                <Card className="border-t-8 border-t-slate-400">
+                    <CardHeader className="text-center bg-green-100/50">
+                        <CheckCircle className="mx-auto text-green-700 h-10 w-10 mb-2" />
+                        <CardTitle className="text-green-700">JOURNEY VALIDATED</CardTitle>
+                        <div className="flex justify-center mt-2">
+                             <Badge className="bg-slate-500 font-bold px-4 py-1">USED</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-6">
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">FROM</p>
+                                <p className="font-bold">{ticket.from}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-primary" />
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">TO</p>
+                                <p className="font-bold">{ticket.to}</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-center text-muted-foreground">Ticket verified at: {new Date(ticket.validatedAt || ticket.updatedAt || Date.now()).toLocaleString()}</p>
+                    </CardContent>
+                </Card>
             ) : (
                 <Card className="overflow-hidden">
                     <CardHeader className="text-center bg-muted/30">

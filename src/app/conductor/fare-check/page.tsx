@@ -5,14 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Loader2, Tag, ArrowDown, ArrowUp, XCircle, CheckCircle, Clock, ArrowRight, Calendar, User, Bus } from 'lucide-react';
+import { Search, Loader2, Tag, ArrowDown, ArrowUp, XCircle, CheckCircle, Clock, ArrowRight, User } from 'lucide-react';
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { calculateFare } from '@/lib/fare-calculator';
 import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { GeneratedTicket } from '@/app/components/generated-ticket';
-import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 type BusType = 'ordinary' | 'express' | 'deluxe';
 type Quantities = { Men: number; Child: number; Women: number; };
@@ -31,6 +30,7 @@ type TicketDetails = {
   busType: BusType;
   ticketCode: string;
   walletAmountUsed?: number;
+  validatedAt?: string;
 };
 
 type VerificationStatus = 'idle' | 'loading' | 'not_found' | 'result' | 'validated' | 'used' | 'expired' | 'cancelled' | 'error';
@@ -131,14 +131,43 @@ export default function FareCheckPage() {
   const getStatusContent = () => {
     if (status === 'idle' || status === 'loading') return null;
     
-    if (status === 'validated' && ticketDetails) {
+    if ((status === 'validated' || status === 'used') && ticketDetails) {
         return (
             <div className="space-y-4 w-full max-w-md">
-                <div className="bg-slate-100 text-slate-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2 border border-slate-300">
-                    <CheckCircle className="h-5 w-5" />
-                    JOURNEY VALIDATED - TICKET USED
-                </div>
-                <GeneratedTicket ticket={ticketDetails as any} />
+                <Card className="border-t-8 border-t-slate-400">
+                    <CardHeader className="text-center bg-slate-100 text-slate-700">
+                        <CheckCircle className="h-10 w-10 mx-auto mb-2" />
+                        <CardTitle className="text-xl font-bold uppercase">
+                            {status === 'validated' ? 'JOURNEY VALIDATED' : 'TICKET ALREADY USED'}
+                        </CardTitle>
+                        <div className="flex justify-center mt-2">
+                             <Badge className="bg-slate-500 font-bold px-4 py-1">USED</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">FROM</p>
+                                <p className="font-bold">{ticketDetails.from}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-primary" />
+                            <div className="text-center">
+                                <p className="text-[10px] font-bold text-muted-foreground">TO</p>
+                                <p className="font-bold">{ticketDetails.to}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Bus Type</p>
+                                <p className="font-bold">{getFullBusType(ticketDetails.busType)}</p>
+                            </div>
+                            <div className="space-y-1 text-right">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Total Fare</p>
+                                <p className="font-bold">Rs. {ticketDetails.totalFare?.toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -153,26 +182,19 @@ export default function FareCheckPage() {
         );
     }
 
-    if (status === 'used') {
-        return (
-            <div className="space-y-4 w-full max-w-md">
-                <div className="bg-slate-200 text-slate-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
-                    <XCircle className="h-5 w-5" />
-                    TICKET ALREADY USED
-                </div>
-                {ticketDetails && <GeneratedTicket ticket={ticketDetails as any} />}
-            </div>
-        );
-    }
-
     if (status === 'expired') {
         return (
             <div className="space-y-4 w-full max-w-md">
-                <div className="bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                <div className="bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2 border border-yellow-200">
                     <Clock className="h-5 w-5" />
                     TICKET EXPIRED
                 </div>
-                {ticketDetails && <GeneratedTicket ticket={ticketDetails as any} />}
+                {ticketDetails && (
+                     <Card className="p-4 bg-white text-center">
+                        <p className="font-bold">{ticketDetails.ticketCode}</p>
+                        <p className="text-sm text-muted-foreground">Issued: {new Date(ticketDetails.createdAt).toLocaleString()}</p>
+                     </Card>
+                )}
             </div>
         );
     }
