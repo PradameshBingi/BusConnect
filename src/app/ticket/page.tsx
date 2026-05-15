@@ -96,36 +96,15 @@ function TicketContent() {
 
   if (!ticket) return null;
 
-  const issueDate = new Date(ticket.createdAt);
-  // Standard 10 minute expiry
-  const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
-  const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
-  const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
-  
-  if (ticket.status === 'used') {
+  if (ticket.status === 'used' || ticket.status === 'cancelled') {
     return (
-        <div className="flex flex-col items-center p-4 space-y-6">
-            <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2 w-full max-w-md">
-                <TicketIcon className="h-5 w-5" />
-                JOURNEY VALIDATED
-            </div>
-            <Card className="w-full max-w-md border-t-8 border-t-slate-400">
-                <CardHeader className="text-center">
-                    <CardTitle className="font-headline text-2xl uppercase">Ticket Used</CardTitle>
-                    <div className="flex justify-center mt-2">
-                        <Badge className="bg-slate-500 hover:bg-slate-500 font-bold px-4 py-1">USED</Badge>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4 text-center">
-                    <p className="text-muted-foreground">This ticket has been validated by a conductor and is no longer valid for travel.</p>
-                    <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg text-sm">
-                        <div className="text-center"><p className="text-[10px] font-bold">FROM</p><p className="font-bold">{ticket.from}</p></div>
-                        <ArrowRight className="h-4 w-4" />
-                        <div className="text-center"><p className="text-[10px] font-bold">TO</p><p className="font-bold">{ticket.to}</p></div>
-                    </div>
-                </CardContent>
-            </Card>
-            <div className="flex flex-col gap-2 w-full max-w-md">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
+            <h1 className={cn("text-4xl font-bold mb-8 uppercase tracking-widest", 
+                ticket.status === 'used' ? "text-slate-500" : "text-red-600"
+            )}>
+                Ticket {ticket.status === 'used' ? 'Used' : 'Cancelled'}
+            </h1>
+            <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button asChild variant="outline" className="h-12"><Link href="/booking-history">View History</Link></Button>
                 <Button asChild className="w-full h-12"><Link href="/">Home</Link></Button>
             </div>
@@ -133,6 +112,11 @@ function TicketContent() {
     );
   }
 
+  const issueDate = new Date(ticket.createdAt);
+  const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
+  const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
+  const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
+  
   return (
     <div className="flex flex-col items-center p-4 md:p-8">
       <Card className={cn("w-full max-w-md border-t-8", {

@@ -12,6 +12,7 @@ import { calculateFare } from '@/lib/fare-calculator';
 import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 type BusType = 'ordinary' | 'express' | 'deluxe';
 type Quantities = { Men: number; Child: number; Women: number; };
@@ -131,42 +132,16 @@ export default function FareCheckPage() {
   const getStatusContent = () => {
     if (status === 'idle' || status === 'loading') return null;
     
-    if ((status === 'validated' || status === 'used') && ticketDetails) {
+    if ((status === 'validated' || status === 'used' || status === 'cancelled') && ticketDetails) {
+        const isCancelled = status === 'cancelled' || ticketDetails.status === 'cancelled';
         return (
             <div className="space-y-4 w-full max-w-md">
-                <Card className="border-t-8 border-t-slate-400">
-                    <CardHeader className="text-center bg-slate-100 text-slate-700">
-                        <CheckCircle className="h-10 w-10 mx-auto mb-2" />
-                        <CardTitle className="text-xl font-bold uppercase">
-                            {status === 'validated' ? 'JOURNEY VALIDATED' : 'TICKET ALREADY USED'}
+                <Card className={cn("border-t-8", isCancelled ? "border-t-red-600" : "border-t-slate-400")}>
+                    <CardHeader className="text-center p-10">
+                        <CardTitle className={cn("text-3xl font-bold uppercase", isCancelled ? "text-red-600" : "text-slate-500")}>
+                            TICKET {isCancelled ? 'CANCELLED' : 'USED'}
                         </CardTitle>
-                        <div className="flex justify-center mt-2">
-                             <Badge className="bg-slate-500 font-bold px-4 py-1">USED</Badge>
-                        </div>
                     </CardHeader>
-                    <CardContent className="pt-6 space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-muted-foreground">FROM</p>
-                                <p className="font-bold">{ticketDetails.from}</p>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-primary" />
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-muted-foreground">TO</p>
-                                <p className="font-bold">{ticketDetails.to}</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                            <div className="space-y-1">
-                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Bus Type</p>
-                                <p className="font-bold">{getFullBusType(ticketDetails.busType)}</p>
-                            </div>
-                            <div className="space-y-1 text-right">
-                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Total Fare</p>
-                                <p className="font-bold">Rs. {ticketDetails.totalFare?.toFixed(2)}</p>
-                            </div>
-                        </div>
-                    </CardContent>
                 </Card>
             </div>
         );
