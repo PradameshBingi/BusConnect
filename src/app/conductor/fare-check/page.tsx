@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { calculateFare } from '@/lib/fare-calculator';
 import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '@/lib/api-config';
-import { Badge } from '@/components/ui/badge';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { cn } from '@/lib/utils';
 
 type BusType = 'ordinary' | 'express' | 'deluxe';
@@ -113,6 +114,8 @@ export default function FareCheckPage() {
 
         if (!response.ok) throw new Error("Validation failed");
         
+        const result = await response.json();
+        setTicketDetails(result.ticket);
         setStatus('validated');
         toast({ title: "Success", description: "Journey validated and database updated." });
     } catch (error) {
@@ -133,15 +136,30 @@ export default function FareCheckPage() {
   const getStatusContent = () => {
     if (status === 'idle' || status === 'loading') return null;
     
-    if (status === 'validated' || status === 'used' || status === 'cancelled' || status === 'expired') {
+    if (status === 'used' || status === 'cancelled' || status === 'expired') {
         return (
             <div className="space-y-4 w-full max-w-md text-center">
-                <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
-                    status === 'used' || status === 'validated' ? "text-slate-500" : 
-                    status === 'cancelled' ? "text-red-600" : "text-yellow-500"
-                )}>
-                    TICKET {status === 'validated' ? 'USED' : status.toUpperCase()}
-                </h1>
+                <div className="p-10 bg-white rounded-lg shadow-sm border">
+                    <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
+                        status === 'used' ? "text-slate-500" : 
+                        status === 'cancelled' ? "text-red-600" : "text-yellow-500"
+                    )}>
+                        TICKET {status.toUpperCase()}
+                    </h1>
+                </div>
+            </div>
+        );
+    }
+
+    if (status === 'validated' && ticketDetails) {
+        return (
+            <div className="w-full max-w-md space-y-4">
+                <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
+                    <CheckCircle className="mx-auto text-green-500 h-10 w-10 mb-2" />
+                    <h2 className="text-2xl font-bold text-green-700 uppercase">Validated</h2>
+                    <p className="text-sm text-green-600">Actual Fare: Rs. {ticketDetails.totalFare.toFixed(2)}</p>
+                </div>
+                <GeneratedTicket ticket={ticketDetails as any} />
             </div>
         );
     }

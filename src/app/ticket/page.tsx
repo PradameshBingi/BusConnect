@@ -1,9 +1,11 @@
+
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Ticket as TicketIcon, Copy, RefreshCw, Loader2, XCircle, Eye } from 'lucide-react';
@@ -100,30 +102,18 @@ function TicketContent() {
   const issueDate = new Date(ticket.createdAt);
   const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
   const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
-
-  if (ticket.status === 'used' || ticket.status === 'cancelled' || isCurrentlyExpired) {
-    const finalStatus = isCurrentlyExpired ? 'expired' : ticket.status;
-    return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
-            <h1 className={cn("text-4xl font-bold mb-8 uppercase tracking-widest", 
-                finalStatus === 'used' ? "text-slate-500" : 
-                finalStatus === 'cancelled' ? "text-red-600" : "text-yellow-500"
-            )}>
-                Ticket {finalStatus === 'used' ? 'Used' : finalStatus === 'cancelled' ? 'Cancelled' : 'Expired'}
-            </h1>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
-                <Button asChild variant="outline" className="h-12"><Link href="/booking-history">View History</Link></Button>
-                <Button asChild className="w-full h-12"><Link href="/">Home</Link></Button>
-            </div>
-        </div>
-    );
-  }
+  const displayStatus = isCurrentlyExpired ? 'expired' : ticket.status;
 
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
   return (
-    <div className="flex flex-col items-center p-4 md:p-8">
-      <Card className={cn("w-full max-w-md border-t-8 border-t-green-600")}>
+    <div className="flex flex-col items-center p-4 md:p-8 space-y-6">
+      <Card className={cn("w-full max-w-md border-t-8", {
+          "border-t-green-600": displayStatus === 'valid',
+          "border-t-slate-500": displayStatus === 'used',
+          "border-t-yellow-500": displayStatus === 'expired',
+          "border-t-red-600": displayStatus === 'cancelled',
+      })}>
         <CardHeader className="text-center relative">
           <Button 
             variant="ghost" 
@@ -136,8 +126,13 @@ function TicketContent() {
           </Button>
           <CardTitle className="font-headline text-2xl uppercase">Digital Ticket</CardTitle>
           <div className="flex justify-center mt-2">
-            <Badge className="capitalize font-bold px-4 py-1 bg-green-600 hover:bg-green-600">
-                {ticket.status}
+            <Badge className={cn("capitalize font-bold px-4 py-1 border-transparent text-white", {
+                "bg-green-600 hover:bg-green-600": displayStatus === 'valid',
+                "bg-slate-500 hover:bg-slate-500": displayStatus === 'used',
+                "bg-yellow-500 hover:bg-yellow-500": displayStatus === 'expired',
+                "bg-red-600 hover:bg-red-600": displayStatus === 'cancelled',
+            })}>
+                {displayStatus}
             </Badge>
           </div>
         </CardHeader>
@@ -181,6 +176,11 @@ function TicketContent() {
           <Button asChild className="w-full"><Link href="/">Back to Home</Link></Button>
         </CardFooter>
       </Card>
+
+      <div className="w-full max-w-md pb-10">
+          <p className="text-center text-sm font-bold text-muted-foreground mb-4">Journey Receipt</p>
+          <GeneratedTicket ticket={ticket as any} />
+      </div>
     </div>
   );
 }

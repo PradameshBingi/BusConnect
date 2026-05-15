@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
 
 export default function VerifyTicketPage() {
     const [ticketCode, setTicketCode] = useState('');
@@ -18,6 +20,7 @@ export default function VerifyTicketPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
     const [showPin, setShowPin] = useState(false);
+    const [justValidated, setJustValidated] = useState(false);
     const { toast } = useToast();
 
     const handleVerification = async (e: React.FormEvent) => {
@@ -25,6 +28,7 @@ export default function VerifyTicketPage() {
         setIsLoading(true);
         setStatus('idle');
         setShowPin(false);
+        setJustValidated(false);
         
         try {
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
@@ -59,6 +63,7 @@ export default function VerifyTicketPage() {
             
             const result = await response.json();
             setTicket(result.ticket);
+            setJustValidated(true);
             toast({ title: "Validated", description: "Ticket status updated to USED in database." });
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not update ticket status.' });
@@ -70,7 +75,7 @@ export default function VerifyTicketPage() {
   return (
     <>
       <Header showBackButton={true} backHref="/conductor/dashboard" title="Verify Ticket" />
-      <div className="flex flex-col items-center bg-muted/40 p-4 min-h-screen">
+      <div className="flex flex-col items-center bg-muted/40 p-4 min-h-screen space-y-4">
         <Card className="w-full max-w-md">
           <CardHeader>
               <CardTitle className="font-headline">Verify Ticket Code</CardTitle>
@@ -94,7 +99,7 @@ export default function VerifyTicketPage() {
         </Card>
         
         {status === 'not_found' && (
-            <Card className="w-full max-w-md mt-4 p-6 text-center text-destructive border-destructive/20 bg-destructive/5">
+            <Card className="w-full max-w-md p-6 text-center text-destructive border-destructive/20 bg-destructive/5">
                 <XCircle className="mx-auto mb-2 h-8 w-8" />
                 <p className="font-bold">Ticket Not Found</p>
                 <p className="text-sm">This code does not exist in the system.</p>
@@ -102,8 +107,9 @@ export default function VerifyTicketPage() {
         )}
 
         {status === 'found' && ticket && (
-          <div className="w-full max-w-md mt-4 space-y-4">
-            {ticket.status === 'used' || ticket.status === 'cancelled' || ticket.status === 'expired' ? (
+          <div className="w-full max-w-md space-y-4">
+            {/* If it was ALREADY used/expired/cancelled before searching, show minimalist text */}
+            {(ticket.status === 'used' || ticket.status === 'cancelled' || ticket.status === 'expired') && !justValidated ? (
                 <div className="text-center p-10 bg-white rounded-lg shadow-sm border">
                     <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
                         ticket.status === 'used' ? "text-slate-500" : 
@@ -112,7 +118,18 @@ export default function VerifyTicketPage() {
                         Ticket {ticket.status}
                     </h1>
                 </div>
+            ) : justValidated ? (
+                /* If it was JUST validated, show the pink ticket as a receipt */
+                <div className="space-y-4">
+                    <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
+                        <CheckCircle className="mx-auto text-green-500 h-10 w-10 mb-2" />
+                        <h2 className="text-2xl font-bold text-green-700">TICKET VALIDATED</h2>
+                        <p className="text-sm text-green-600">Journey started successfully.</p>
+                    </div>
+                    <GeneratedTicket ticket={ticket} />
+                </div>
             ) : (
+                /* Standard verification view for a VALID ticket */
                 <Card className="overflow-hidden">
                     <CardHeader className="text-center bg-muted/30">
                         <CheckCircle className="mx-auto text-green-500 h-12 w-12" />
@@ -150,16 +167,14 @@ export default function VerifyTicketPage() {
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2 bg-muted/10">
-                        {ticket.status === 'valid' && (
-                            <Button onClick={handleValidate} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle className="mr-2 h-5 w-5" />}
-                                Validate Boarding
-                            </Button>
-                        )}
+                        <Button onClick={handleValidate} className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle className="mr-2 h-5 w-5" />}
+                            Validate Boarding
+                        </Button>
                     </CardFooter>
                 </Card>
             )}
-            <Button variant="outline" className="w-full bg-white" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null); setShowPin(false);}}>
+            <Button variant="outline" className="w-full bg-white h-12" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null); setShowPin(false); setJustValidated(false);}}>
                 Clear and Search Next
             </Button>
           </div>
