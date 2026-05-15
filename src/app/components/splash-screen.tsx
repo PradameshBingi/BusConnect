@@ -1,4 +1,3 @@
-
 import { Bus } from "lucide-react";
 
 export function SplashScreen() {

@@ -19,7 +19,7 @@ export default function RootLayout({
     // Force splash screen to clear after a short mount delay
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, []);
