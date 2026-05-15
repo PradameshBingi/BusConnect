@@ -12,6 +12,7 @@ import { calculateFare } from '@/lib/fare-calculator';
 import { Separator } from '@/components/ui/separator';
 import { API_ENDPOINTS } from '@/lib/api-config';
 import { GeneratedTicket } from '@/app/components/generated-ticket';
+import { cn } from '@/lib/utils';
 
 type BusType = 'ordinary' | 'express' | 'deluxe';
 type Quantities = { Men: number; Child: number; Women: number; };
@@ -40,6 +41,7 @@ export default function FareCheckPage() {
   const [status, setStatus] = useState<VerificationStatus>('idle');
   const [ticketDetails, setTicketDetails] = useState<TicketDetails | null>(null);
   const [fareDifference, setFareDifference] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const getFullBusType = (type: string) => {
@@ -64,15 +66,15 @@ export default function FareCheckPage() {
 
     try {
         const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
-        if (!response.ok) throw new Error("Server error");
         
-        const result = await response.json();
-        
-        if (result.status === 'invalid') {
+        if (response.status === 404) {
             setStatus('not_found');
             return;
         }
 
+        if (!response.ok) throw new Error("Server communication failure");
+        
+        const result = await response.json();
         const foundTicket = result.ticket;
         setTicketDetails(foundTicket);
 
@@ -93,9 +95,8 @@ export default function FareCheckPage() {
   
   const handleValidation = async () => {
     if (!ticketDetails || !actualBusType) return;
+    setIsLoading(true);
     
-    const actualFare = calculateFare(ticketDetails.from, ticketDetails.to, ticketDetails.quantities, actualBusType as BusType);
-
     try {
         const response = await fetch(`${API_ENDPOINTS.USE}/${ticketDetails.ticketCode}`, {
             method: 'POST',
@@ -111,9 +112,11 @@ export default function FareCheckPage() {
 
         setStatus('validated');
         setTicketDetails(result.ticket);
-        toast({ title: "Success", description: "Ticket validated and marked as USED in database." });
+        toast({ title: "Success", description: "Ticket marked as USED in database." });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not validate ticket on server.' });
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not update database.' });
+    } finally {
+        setIsLoading(false);
     }
   }
 
@@ -131,14 +134,25 @@ export default function FareCheckPage() {
     if (status === 'validated' && ticketDetails) {
         return (
             <div className="space-y-4 w-full max-w-md">
-                <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                <div className="bg-slate-100 text-slate-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2 border border-slate-300">
                     <CheckCircle className="h-5 w-5" />
-                    TICKET VALIDATED - USED
+                    JOURNEY VALIDATED - TICKET USED
                 </div>
                 <GeneratedTicket ticket={ticketDetails as any} />
             </div>
         );
     }
+
+    if (status === 'not_found') {
+        return (
+            <Card className="w-full max-w-md p-6 text-center text-destructive border-destructive/20 bg-destructive/5">
+                <XCircle className="mx-auto mb-2 h-8 w-8" />
+                <p className="font-bold">Ticket Not Found</p>
+                <p className="text-sm">Verify the code and try again.</p>
+            </Card>
+        );
+    }
+
     if (status === 'used') {
         return (
             <div className="space-y-4 w-full max-w-md">
@@ -150,17 +164,29 @@ export default function FareCheckPage() {
             </div>
         );
     }
+
+    if (status === 'expired') {
+        return (
+            <div className="space-y-4 w-full max-w-md">
+                <div className="bg-yellow-100 text-yellow-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    TICKET EXPIRED
+                </div>
+                {ticketDetails && <GeneratedTicket ticket={ticketDetails as any} />}
+            </div>
+        );
+    }
     
     if (status === 'result' && ticketDetails) {
         return (
             <Card className="w-full max-w-md mt-8">
                 <CardHeader className="items-center text-center">
                     {fareDifference === 0 ? <CheckCircle className="h-12 w-12 text-green-500" /> : fareDifference > 0 ? <ArrowUp className="h-12 w-12 text-yellow-600" /> : <ArrowDown className="h-12 w-12 text-primary" />}
-                    <CardTitle className="text-2xl font-bold">
-                        {fareDifference === 0 ? "Fare Correct" : fareDifference > 0 ? "Collect Difference" : "Refund Due"}
+                    <CardTitle className="text-2xl font-bold font-headline">
+                        {fareDifference === 0 ? "Fare Correct" : fareDifference > 0 ? "Collect Difference" : "Fare Upgrade Available"}
                     </CardTitle>
                     <CardDescription>
-                        {fareDifference === 0 ? "Booked fare matches bus type." : fareDifference > 0 ? `Collect Rs. ${fareDifference.toFixed(2)} from passenger.` : `Rs. ${Math.abs(fareDifference).toFixed(2)} will be refunded.`}
+                        {fareDifference === 0 ? "Booked fare matches bus type." : fareDifference > 0 ? `Collect Rs. ${fareDifference.toFixed(2)} cash from passenger.` : `Fare difference will be refunded to wallet.`}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6 pt-0">
@@ -177,28 +203,24 @@ export default function FareCheckPage() {
                             </div>
                         </div>
                         <Separator />
-                        <div className="flex justify-between items-center">
+                        <div className="flex justify-between items-center px-4">
                             <div className="text-center">
-                                <p className="text-sm text-muted-foreground">From</p>
-                                <p className="font-bold">{ticketDetails.from}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">From</p>
+                                <p className="font-bold text-sm">{ticketDetails.from}</p>
                             </div>
                             <ArrowRight className="h-4 w-4 text-primary" />
                             <div className="text-center">
-                                <p className="text-sm text-muted-foreground">To</p>
-                                <p className="font-bold">{ticketDetails.to}</p>
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">To</p>
+                                <p className="font-bold text-sm">{ticketDetails.to}</p>
                             </div>
                         </div>
                         <Separator />
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                             <div className="flex items-center gap-2">
-                                <Calendar className="h-4 w-4 text-muted-foreground"/>
-                                <p className="font-bold">{new Date(ticketDetails.createdAt).toLocaleDateString()}</p>
-                             </div>
+                        <div className="grid grid-cols-2 gap-4 text-xs">
                              <div className="flex items-center gap-2">
                                 <User className="h-4 w-4 text-muted-foreground"/>
-                                <p className="font-bold">{ticketDetails.passengers}</p>
+                                <p className="font-medium">{ticketDetails.passengers}</p>
                              </div>
-                             <div className="flex items-center gap-2">
+                             <div className="flex items-center justify-end gap-2">
                                 <Tag className="h-4 w-4 text-muted-foreground" />
                                 <p className="font-bold">Paid: Rs. {ticketDetails.totalFare?.toFixed(2)}</p>
                              </div>
@@ -206,7 +228,9 @@ export default function FareCheckPage() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full h-12 text-lg" onClick={handleValidation}>Validate & Mark as USED</Button>
+                    <Button className="w-full h-12 text-lg" onClick={handleValidation} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="animate-spin" /> : "Validate & Mark as USED"}
+                    </Button>
                 </CardFooter>
             </Card>
         );
@@ -220,20 +244,28 @@ export default function FareCheckPage() {
       <div className="p-4 md:p-8 flex flex-col items-center gap-8 min-h-screen bg-muted/30">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="font-headline text-2xl">Verify by Bus Type</CardTitle>
-            <CardDescription>Check for fare differences across bus categories.</CardDescription>
+            <CardTitle className="font-headline text-2xl">Verify Boarding Category</CardTitle>
+            <CardDescription>Adjust fare if passenger boards a different bus type.</CardDescription>
           </CardHeader>
           <form onSubmit={handleFareCheck}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="ticket-code">Ticket Code</Label>
-                <Input id="ticket-code" placeholder="TKT-XX-XXXXX" value={ticketCode} onChange={e => setTicketCode(e.target.value)} required className="uppercase" />
+                <Input 
+                  id="ticket-code" 
+                  placeholder="TKT-XX-XXXXX" 
+                  value={ticketCode} 
+                  onChange={e => setTicketCode(e.target.value)} 
+                  required 
+                  disabled={status === 'loading'}
+                  className="uppercase font-mono" 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bus-type">Actual Boarding Bus Type</Label>
-                <Select value={actualBusType} onValueChange={(v) => setActualBusType(v as BusType)} required>
+                <Select value={actualBusType} onValueChange={(v) => setActualBusType(v as BusType)} required disabled={status === 'loading'}>
                   <SelectTrigger id="bus-type">
-                    <SelectValue placeholder="Select bus type..." />
+                    <SelectValue placeholder="Select current bus..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ordinary">City Ordinary</SelectItem>
@@ -246,7 +278,7 @@ export default function FareCheckPage() {
             <CardFooter>
               <Button type="submit" className="w-full h-12" disabled={status === 'loading'}>
                 {status === 'loading' ? <Loader2 className="animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                Check Fare Difference
+                Calculate Fare Difference
               </Button>
             </CardFooter>
           </form>
@@ -254,8 +286,8 @@ export default function FareCheckPage() {
 
         {getStatusContent()}
 
-        {(status === 'validated' || status === 'used' || status === 'expired' || status === 'not_found') && (
-            <Button variant="outline" className="w-full max-w-md bg-white h-12" onClick={reset}>Verify Next Ticket</Button>
+        {(status === 'validated' || status === 'used' || status === 'expired' || status === 'not_found' || status === 'cancelled') && (
+            <Button variant="outline" className="w-full max-w-md bg-white h-12 border-primary text-primary hover:bg-primary/5" onClick={reset}>Verify Another Ticket</Button>
         )}
       </div>
     </>

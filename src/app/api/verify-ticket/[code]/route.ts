@@ -35,7 +35,7 @@ export async function GET(
             ticket.status = 'expired';
             
             // Calculate refund (Total paid - 10% fee)
-            const totalPaid = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
+            const totalPaid = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0)) || 0;
             refundAmount = Math.max(0, totalPaid - Math.round(totalPaid * 0.10));
             
             await ticket.save();
@@ -43,7 +43,11 @@ export async function GET(
         }
     }
 
-    return NextResponse.json({ status: ticket.status, ticket, refundAmount });
+    return NextResponse.json({ 
+        status: ticket.status, 
+        ticket: ticket.toObject(), 
+        refundAmount 
+    });
   } catch (err: any) {
     console.error("❌ API /verify-ticket Error:", err);
     return NextResponse.json({ 
