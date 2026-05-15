@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Ticket as TicketIcon, Copy, RefreshCw, Loader2, XCircle } from 'lucide-react';
+import { ArrowRight, Ticket as TicketIcon, Copy, RefreshCw, Loader2, XCircle, Eye } from 'lucide-react';
 import Header from '@/app/components/header';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ function TicketContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const { toast } = useToast();
   const id = searchParams.get('id');
 
@@ -155,9 +156,18 @@ function TicketContent() {
              <div><p className="text-[9px]">BUS TYPE</p><p className="font-bold text-primary">{getFullBusType(ticket.busType)}</p></div>
           </div>
 
-          <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex justify-between items-center cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
-            <div><p className="text-[10px] uppercase">Passenger PIN</p><p className="font-mono text-xl font-bold tracking-widest text-primary">{ticket.securityCode}</p></div>
-            <Copy className="h-4 w-4 text-muted-foreground" />
+          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2">
+            <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tight">Passenger Security PIN</p>
+            {showPin ? (
+              <div className="flex items-center justify-between w-full cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
+                <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary flex-grow text-center">{ticket.securityCode}</p>
+                <Copy className="h-4 w-4 text-muted-foreground ml-2" />
+              </div>
+            ) : (
+              <Button variant="outline" size="sm" className="w-full border-primary text-primary font-bold" onClick={() => setShowPin(true)}>
+                <Eye className="mr-2 h-4 w-4" /> Show Security PIN
+              </Button>
+            )}
           </div>
 
           <div className="text-center p-4 bg-slate-900 text-white rounded-lg cursor-pointer" onClick={() => handleCopy(ticket.ticketCode, 'Code')}>

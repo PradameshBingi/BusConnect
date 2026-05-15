@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, CheckCircle, XCircle, Clock, Loader2, ArrowRight } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, Loader2, ArrowRight, Eye } from 'lucide-react';
 import Header from '@/app/components/header';
 import { useToast } from "@/hooks/use-toast";
 import { API_ENDPOINTS } from '@/lib/api-config';
@@ -17,12 +17,14 @@ export default function VerifyTicketPage() {
     const [ticket, setTicket] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'found' | 'not_found'>('idle');
+    const [showPin, setShowPin] = useState(false);
     const { toast } = useToast();
 
     const handleVerification = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setStatus('idle');
+        setShowPin(false);
         
         try {
             const response = await fetch(`${API_ENDPOINTS.VERIFY}/${ticketCode.trim().toUpperCase()}`);
@@ -102,19 +104,14 @@ export default function VerifyTicketPage() {
         {status === 'found' && ticket && (
           <div className="w-full max-w-md mt-4 space-y-4">
             {ticket.status === 'used' || ticket.status === 'cancelled' || ticket.status === 'expired' ? (
-                <Card className={cn("border-t-8", 
-                  ticket.status === 'used' ? "border-t-slate-400" : 
-                  ticket.status === 'cancelled' ? "border-t-red-600" : "border-t-yellow-500"
-                )}>
-                    <CardHeader className="text-center p-10">
-                        <CardTitle className={cn("text-3xl font-bold uppercase", 
-                          ticket.status === 'used' ? "text-slate-500" : 
-                          ticket.status === 'cancelled' ? "text-red-600" : "text-yellow-500"
-                        )}>
-                            TICKET {ticket.status}
-                        </CardTitle>
-                    </CardHeader>
-                </Card>
+                <div className="text-center p-10 bg-white rounded-lg shadow-sm border">
+                    <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
+                        ticket.status === 'used' ? "text-slate-500" : 
+                        ticket.status === 'cancelled' ? "text-red-600" : "text-yellow-500"
+                    )}>
+                        Ticket {ticket.status}
+                    </h1>
+                </div>
             ) : (
                 <Card className="overflow-hidden">
                     <CardHeader className="text-center bg-muted/30">
@@ -140,8 +137,16 @@ export default function VerifyTicketPage() {
                             <p className="font-bold text-right text-primary">Rs. {ticket.totalFare?.toFixed(2)}</p>
                         </div>
                         <div className="border-t pt-4">
-                            <p className="text-[10px] text-center text-muted-foreground uppercase font-bold mb-1">Security PIN</p>
-                            <p className="text-3xl font-mono font-bold text-center tracking-widest text-primary">{ticket.securityCode}</p>
+                            <p className="text-[10px] text-center text-muted-foreground uppercase font-bold mb-2">Security PIN</p>
+                            {showPin ? (
+                                <p className="text-4xl font-mono font-bold text-center tracking-[0.3em] text-primary">{ticket.securityCode}</p>
+                            ) : (
+                                <div className="flex justify-center">
+                                    <Button variant="outline" size="sm" className="font-bold" onClick={() => setShowPin(true)}>
+                                        <Eye className="mr-2 h-4 w-4" /> Show Security PIN
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2 bg-muted/10">
@@ -154,7 +159,7 @@ export default function VerifyTicketPage() {
                     </CardFooter>
                 </Card>
             )}
-            <Button variant="outline" className="w-full" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null);}}>
+            <Button variant="outline" className="w-full bg-white" onClick={() => {setStatus('idle'); setTicketCode(''); setTicket(null); setShowPin(false);}}>
                 Clear and Search Next
             </Button>
           </div>
