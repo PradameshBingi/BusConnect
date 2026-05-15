@@ -8,7 +8,7 @@ import { CountdownTimer } from '@/app/components/countdown-timer';
 import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Ticket as TicketIcon, Copy, RefreshCw, Loader2, XCircle, Eye } from 'lucide-react';
+import { ArrowRight, Copy, RefreshCw, Loader2, XCircle, Eye } from 'lucide-react';
 import Header from '@/app/components/header';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -106,81 +106,105 @@ function TicketContent() {
 
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
+  const isUsed = displayStatus === 'used';
+  const isExpiredOrCancelled = displayStatus === 'expired' || displayStatus === 'cancelled';
+  const isValid = displayStatus === 'valid';
+
   return (
     <div className="flex flex-col items-center p-4 md:p-8 space-y-6">
-      <Card className={cn("w-full max-w-md border-t-8", {
-          "border-t-green-600": displayStatus === 'valid',
-          "border-t-slate-500": displayStatus === 'used',
-          "border-t-yellow-500": displayStatus === 'expired',
-          "border-t-red-600": displayStatus === 'cancelled',
-      })}>
-        <CardHeader className="text-center relative">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-4 top-4" 
-            onClick={() => fetchTicket(true)}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
-          </Button>
-          <CardTitle className="font-headline text-2xl uppercase">Digital Ticket</CardTitle>
-          <div className="flex justify-center mt-2">
-            <Badge className={cn("capitalize font-bold px-4 py-1 border-transparent text-white", {
-                "bg-green-600 hover:bg-green-600": displayStatus === 'valid',
-                "bg-slate-500 hover:bg-slate-500": displayStatus === 'used',
-                "bg-yellow-500 hover:bg-yellow-500": displayStatus === 'expired',
-                "bg-red-600 hover:bg-red-600": displayStatus === 'cancelled',
-            })}>
-                {displayStatus}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg">
-            <div className="text-center"><p className="text-[10px] font-bold">FROM</p><p className="font-bold">{ticket.from}</p></div>
-            <ArrowRight className="h-4 w-4" />
-            <div className="text-center"><p className="text-[10px] font-bold">TO</p><p className="font-bold">{ticket.to}</p></div>
-          </div>
+      
+      {/* 1. Preview Card (Details) - Shown for Valid, Expired, and Cancelled. Hidden for Used. */}
+      {!isUsed && (
+        <Card className={cn("w-full max-w-md border-t-8", {
+            "border-t-green-600": displayStatus === 'valid',
+            "border-t-yellow-500": displayStatus === 'expired',
+            "border-t-red-600": displayStatus === 'cancelled',
+        })}>
+          <CardHeader className="text-center relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-4 top-4" 
+              onClick={() => fetchTicket(true)}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+            </Button>
+            <CardTitle className="font-headline text-2xl uppercase">Digital Ticket</CardTitle>
+            <div className="flex justify-center mt-2">
+              <Badge className={cn("capitalize font-bold px-4 py-1 border-transparent text-white", {
+                  "bg-green-600 hover:bg-green-600": displayStatus === 'valid',
+                  "bg-yellow-500 hover:bg-yellow-500": displayStatus === 'expired',
+                  "bg-red-600 hover:bg-red-600": displayStatus === 'cancelled',
+              })}>
+                  {displayStatus}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg">
+              <div className="text-center"><p className="text-[10px] font-bold">FROM</p><p className="font-bold">{ticket.from}</p></div>
+              <ArrowRight className="h-4 w-4" />
+              <div className="text-center"><p className="text-[10px] font-bold">TO</p><p className="font-bold">{ticket.to}</p></div>
+            </div>
 
-          <div className="grid grid-cols-2 gap-4 text-xs">
-             <div><p className="text-[9px]">DATE</p><p className="font-bold">{issueDate.toLocaleDateString()}</p></div>
-             <div><p className="text-[9px]">TIME</p><p className="font-bold">{issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
-             <div className="col-span-2"><p className="text-[9px]">PASSENGERS</p><p className="font-bold">{ticket.passengers}</p></div>
-             <div><p className="text-[9px]">FARE PAID</p><p className="font-bold">Rs. {totalCost.toFixed(2)}</p></div>
-             <div><p className="text-[9px]">BUS TYPE</p><p className="font-bold text-primary">{getFullBusType(ticket.busType)}</p></div>
-          </div>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+               <div><p className="text-[9px]">DATE</p><p className="font-bold">{issueDate.toLocaleDateString()}</p></div>
+               <div><p className="text-[9px]">TIME</p><p className="font-bold">{issueDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
+               <div className="col-span-2"><p className="text-[9px]">PASSENGERS</p><p className="font-bold">{ticket.passengers}</p></div>
+               <div><p className="text-[9px]">FARE PAID</p><p className="font-bold">Rs. {totalCost.toFixed(2)}</p></div>
+               <div><p className="text-[9px]">BUS TYPE</p><p className="font-bold text-primary">{getFullBusType(ticket.busType)}</p></div>
+            </div>
 
-          <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2">
-            <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tight">Passenger Security PIN</p>
-            {showPin ? (
-              <div className="flex items-center justify-between w-full cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
-                <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary flex-grow text-center">{ticket.securityCode}</p>
-                <Copy className="h-4 w-4 text-muted-foreground ml-2" />
-              </div>
-            ) : (
-              <Button variant="outline" size="sm" className="w-full border-primary text-primary font-bold" onClick={() => setShowPin(true)}>
-                <Eye className="mr-2 h-4 w-4" /> Show Security PIN
-              </Button>
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2">
+              <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tight">Passenger Security PIN</p>
+              {showPin ? (
+                <div className="flex items-center justify-between w-full cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
+                  <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary flex-grow text-center">{ticket.securityCode}</p>
+                  <Copy className="h-4 w-4 text-muted-foreground ml-2" />
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="w-full border-primary text-primary font-bold" onClick={() => setShowPin(true)}>
+                  <Eye className="mr-2 h-4 w-4" /> Show Security PIN
+                </Button>
+              )}
+            </div>
+
+            <div className="text-center p-4 bg-slate-900 text-white rounded-lg cursor-pointer" onClick={() => handleCopy(ticket.ticketCode, 'Code')}>
+              <p className="text-[10px] uppercase text-slate-400 mb-1">Ticket Code</p>
+              <p className="font-mono text-xl font-bold break-all">{ticket.ticketCode}</p>
+            </div>
+
+            {isValid && <CountdownTimer expiryTimestamp={expiryTimestamp} />}
+          </CardContent>
+           <CardFooter>
+            <Button asChild className="w-full"><Link href="/">Back to Home</Link></Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* 2. Pink Ticket (GeneratedTicket) - Shown for Valid (Preview) and Used (Receipt). Hidden for Expired/Cancelled. */}
+      {(isValid || isUsed) && (
+        <div className="w-full max-w-md pb-10 flex flex-col items-center">
+            <p className="text-center text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">
+                {isUsed ? "Journey Receipt" : "Journey Preview"}
+            </p>
+            <GeneratedTicket ticket={ticket as any} />
+            
+            {/* Dedicated home button for the minimalist 'Used' view */}
+            {isUsed && (
+              <Button asChild className="w-full mt-6 h-12 text-lg"><Link href="/">Back to Home</Link></Button>
             )}
-          </div>
+        </div>
+      )}
 
-          <div className="text-center p-4 bg-slate-900 text-white rounded-lg cursor-pointer" onClick={() => handleCopy(ticket.ticketCode, 'Code')}>
-            <p className="text-[10px] uppercase text-slate-400 mb-1">Ticket Code</p>
-            <p className="font-mono text-xl font-bold break-all">{ticket.ticketCode}</p>
-          </div>
-
-          {ticket.status === 'valid' && !isCurrentlyExpired && <CountdownTimer expiryTimestamp={expiryTimestamp} />}
-        </CardContent>
-         <CardFooter>
-          <Button asChild className="w-full"><Link href="/">Back to Home</Link></Button>
-        </CardFooter>
-      </Card>
-
-      <div className="w-full max-w-md pb-10">
-          <p className="text-center text-sm font-bold text-muted-foreground mb-4">Journey Receipt</p>
-          <GeneratedTicket ticket={ticket as any} />
-      </div>
+      {/* 3. Status feedback for Expired/Cancelled journeys */}
+      {isExpiredOrCancelled && (
+        <div className="w-full max-w-md pb-10 text-center">
+           <p className="text-xs text-muted-foreground">The high-fidelity journey receipt is only available for active or completed trips.</p>
+        </div>
+      )}
+      
     </div>
   );
 }
