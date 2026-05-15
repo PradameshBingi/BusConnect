@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -39,7 +38,7 @@ export default function RootLayout({
             <Toaster />
             <footer className="bg-white p-4 text-center border-t fixed bottom-0 w-full z-40">
               <p className="text-xs text-muted-foreground">Powered by</p>
-              <p className="font-bold text-lg text-primary">Bingi Pradamesh</p>
+              <p className="font-bold text-lg text-slate-950">Bingi Pradamesh</p>
             </footer>
           </FirebaseClientProvider>
         </div>

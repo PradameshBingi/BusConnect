@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -78,7 +77,7 @@ export default function FareCheckPage() {
         setTicketDetails(foundTicket);
 
         if (foundTicket.status === 'valid') {
-            const actualFare = calculateFare(foundTicket.from, foundTicket.to, foundTicket.quantities, actualBusType);
+            const actualFare = calculateFare(foundTicket.from, foundTicket.to, foundTicket.quantities, actualBusType as BusType);
             const currentTotalPaid = foundTicket.totalFare || (foundTicket.fare + (foundTicket.walletAmountUsed || 0));
             const difference = actualFare - currentTotalPaid;
             setFareDifference(difference);
@@ -95,7 +94,7 @@ export default function FareCheckPage() {
   const handleValidation = async () => {
     if (!ticketDetails || !actualBusType) return;
     
-    const actualFare = calculateFare(ticketDetails.from, ticketDetails.to, ticketDetails.quantities, actualBusType);
+    const actualFare = calculateFare(ticketDetails.from, ticketDetails.to, ticketDetails.quantities, actualBusType as BusType);
 
     try {
         const response = await fetch(`${API_ENDPOINTS.USE}/${ticketDetails.ticketCode}`, {
@@ -103,8 +102,7 @@ export default function FareCheckPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 busType: actualBusType,
-                totalFare: actualFare,
-                fare: ticketDetails.fare + (fareDifference > 0 ? fareDifference : 0)
+                fare: (ticketDetails.fare || 0) + (fareDifference > 0 ? fareDifference : 0)
             })
         });
 
@@ -113,7 +111,7 @@ export default function FareCheckPage() {
 
         setStatus('validated');
         setTicketDetails(result.ticket);
-        toast({ title: "Success", description: "Ticket validated with bus-specific fare adjustment." });
+        toast({ title: "Success", description: "Ticket validated and marked as USED in database." });
     } catch (error) {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not validate ticket on server.' });
     }
@@ -132,10 +130,10 @@ export default function FareCheckPage() {
     
     if (status === 'validated' && ticketDetails) {
         return (
-            <div className="space-y-4">
+            <div className="space-y-4 w-full max-w-md">
                 <div className="bg-green-100 text-green-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
                     <CheckCircle className="h-5 w-5" />
-                    TICKET VALIDATED
+                    TICKET VALIDATED - USED
                 </div>
                 <GeneratedTicket ticket={ticketDetails as any} />
             </div>
@@ -143,8 +141,8 @@ export default function FareCheckPage() {
     }
     if (status === 'used') {
         return (
-            <div className="space-y-4">
-                <div className="bg-orange-100 text-orange-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
+            <div className="space-y-4 w-full max-w-md">
+                <div className="bg-slate-200 text-slate-700 px-4 py-3 rounded-lg font-bold text-center flex items-center justify-center gap-2">
                     <XCircle className="h-5 w-5" />
                     TICKET ALREADY USED
                 </div>
@@ -167,6 +165,17 @@ export default function FareCheckPage() {
                 </CardHeader>
                 <CardContent className="p-6 pt-0">
                     <div className='space-y-4'>
+                        <Separator />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Booked Bus</p>
+                                <p className="font-bold text-primary">{getFullBusType(ticketDetails.busType)}</p>
+                            </div>
+                            <div className="space-y-1 text-right">
+                                <p className="text-[10px] text-muted-foreground uppercase font-bold">Boarding Bus</p>
+                                <p className="font-bold text-accent">{getFullBusType(actualBusType as BusType)}</p>
+                            </div>
+                        </div>
                         <Separator />
                         <div className="flex justify-between items-center">
                             <div className="text-center">
@@ -193,15 +202,11 @@ export default function FareCheckPage() {
                                 <Tag className="h-4 w-4 text-muted-foreground" />
                                 <p className="font-bold">Paid: Rs. {ticketDetails.totalFare?.toFixed(2)}</p>
                              </div>
-                             <div className="flex items-center gap-2">
-                                <Bus className="h-4 w-4 text-muted-foreground" />
-                                <p className="font-bold">Bus: {getFullBusType(actualBusType as BusType)}</p>
-                             </div>
                         </div>
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="w-full" onClick={handleValidation}>Validate & Update</Button>
+                    <Button className="w-full h-12 text-lg" onClick={handleValidation}>Validate & Mark as USED</Button>
                 </CardFooter>
             </Card>
         );
@@ -225,7 +230,7 @@ export default function FareCheckPage() {
                 <Input id="ticket-code" placeholder="TKT-XX-XXXXX" value={ticketCode} onChange={e => setTicketCode(e.target.value)} required className="uppercase" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="bus-type">Actual Bus Type</Label>
+                <Label htmlFor="bus-type">Actual Boarding Bus Type</Label>
                 <Select value={actualBusType} onValueChange={(v) => setActualBusType(v as BusType)} required>
                   <SelectTrigger id="bus-type">
                     <SelectValue placeholder="Select bus type..." />
@@ -239,9 +244,9 @@ export default function FareCheckPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button type="submit" className="w-full" disabled={status === 'loading'}>
+              <Button type="submit" className="w-full h-12" disabled={status === 'loading'}>
                 {status === 'loading' ? <Loader2 className="animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                Check Fare
+                Check Fare Difference
               </Button>
             </CardFooter>
           </form>
@@ -250,7 +255,7 @@ export default function FareCheckPage() {
         {getStatusContent()}
 
         {(status === 'validated' || status === 'used' || status === 'expired' || status === 'not_found') && (
-            <Button variant="outline" className="w-full max-w-md bg-white" onClick={reset}>Verify Next Ticket</Button>
+            <Button variant="outline" className="w-full max-w-md bg-white h-12" onClick={reset}>Verify Next Ticket</Button>
         )}
       </div>
     </>

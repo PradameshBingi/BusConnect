@@ -1,4 +1,3 @@
-
 import { Bus } from "lucide-react";
 
 export function SplashScreen() {
@@ -13,7 +12,7 @@ export function SplashScreen() {
       </div>
       <div className="absolute bottom-10 text-center">
         <p className="text-sm text-primary-foreground/90">Conceptualized and Developed by</p>
-        <p className="font-bold text-3xl" style={{ color: 'hsl(var(--footer-name-color))' }}>BINGI PRADAMESH</p>
+        <p className="font-bold text-3xl text-slate-950">BINGI PRADAMESH</p>
       </div>
     </div>
   );

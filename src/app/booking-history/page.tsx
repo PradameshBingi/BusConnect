@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -53,14 +52,22 @@ export default function BookingHistoryPage() {
     if (!silent) setIsRefreshing(true);
     try {
       const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
+      let autoRefundTotal = 0;
+      let refundsCount = 0;
       
-      // We only strictly need to sync tickets that are currently 'valid' to check for expiry or validation
       const updatedTickets = await Promise.all(storedTickets.map(async (t) => {
         if (t.status === 'valid') {
           try {
             const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
             if (res.ok) {
               const data = await res.json();
+              
+              // Detect auto-refund from server
+              if (data.status === 'expired' && data.refundAmount > 0) {
+                 autoRefundTotal += data.refundAmount;
+                 refundsCount++;
+              }
+              
               return { ...t, status: data.status };
             }
           } catch (e) {
@@ -70,9 +77,26 @@ export default function BookingHistoryPage() {
         return t;
       }));
 
+      // Apply auto-refunds to wallet if any occurred during sync
+      if (autoRefundTotal > 0) {
+          const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
+          walletData.balance += autoRefundTotal;
+          walletData.transactions.push({
+            type: 'credit',
+            description: `Auto-Refund for Expired Ticket(s)`,
+            amount: autoRefundTotal,
+            date: new Date().toISOString(),
+          });
+          localStorage.setItem('userWallet', JSON.stringify(walletData));
+          toast({ 
+            title: "Auto-Refund Applied", 
+            description: `Rs. ${autoRefundTotal.toFixed(2)} refunded to wallet for ${refundsCount} expired ticket(s).` 
+          });
+      }
+
       localStorage.setItem('generatedTickets', JSON.stringify(updatedTickets));
       setTickets([...updatedTickets].reverse());
-      if (!silent) toast({ title: "Updated", description: "Ticket statuses synced with server." });
+      if (!silent) toast({ title: "Updated", description: "Ticket statuses synced with database." });
     } catch (error) {
       if (!silent) toast({ variant: 'destructive', title: "Sync Error", description: "Could not reach server." });
     } finally {
@@ -112,10 +136,9 @@ export default function BookingHistoryPage() {
       if (refundAmount > 0) {
         const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
         walletData.balance += refundAmount;
-        walletData.transactions = walletData.transactions || [];
         walletData.transactions.push({
           type: 'credit',
-          description: `Refund for ${ticketCode}`,
+          description: `Refund for Cancelled Ticket ${ticketCode}`,
           amount: refundAmount,
           date: new Date().toISOString(),
         });
@@ -151,17 +174,15 @@ export default function BookingHistoryPage() {
           </div>
           <Button variant="outline" size="sm" onClick={() => syncStatuses(false)} disabled={isRefreshing}>
             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
-            Sync
+            Sync Status
           </Button>
         </div>
         {tickets.length === 0 ? (
-          <Card><CardContent className="p-6 text-center">No local booking history found.</CardContent></Card>
+          <Card><CardContent className="p-6 text-center">No booking history found.</CardContent></Card>
         ) : (
           <div className="space-y-4">
             {tickets.map(ticket => {
-              const expiry = new Date(ticket.createdAt).getTime() + (10 * 60 * 1000);
-              const isExpired = new Date().getTime() > expiry && ticket.status === 'valid';
-              const status = isExpired ? 'expired' : ticket.status;
+              const status = ticket.status;
               const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
               const canUpgrade = ticket.busType !== 'deluxe' && status === 'valid';
 
@@ -208,7 +229,7 @@ export default function BookingHistoryPage() {
                     
                     {status === 'valid' && (
                       <div className="mt-4 pt-4 border-t space-y-4">
-                        <CountdownTimer expiryTimestamp={expiry} />
+                        <CountdownTimer expiryTimestamp={new Date(ticket.createdAt).getTime() + (10 * 60 * 1000)} />
                         <div className={cn("grid gap-2", canUpgrade ? "grid-cols-2" : "grid-cols-1")}>
                           {canUpgrade && (
                             <Button asChild variant="outline" size="sm" className="border-primary text-primary">
