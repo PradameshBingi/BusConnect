@@ -96,13 +96,19 @@ function TicketContent() {
 
   if (!ticket) return null;
 
-  if (ticket.status === 'used' || ticket.status === 'cancelled') {
+  const issueDate = new Date(ticket.createdAt);
+  const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
+  const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
+
+  if (ticket.status === 'used' || ticket.status === 'cancelled' || isCurrentlyExpired) {
+    const finalStatus = isCurrentlyExpired ? 'expired' : ticket.status;
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 text-center">
             <h1 className={cn("text-4xl font-bold mb-8 uppercase tracking-widest", 
-                ticket.status === 'used' ? "text-slate-500" : "text-red-600"
+                finalStatus === 'used' ? "text-slate-500" : 
+                finalStatus === 'cancelled' ? "text-red-600" : "text-yellow-500"
             )}>
-                Ticket {ticket.status === 'used' ? 'Used' : 'Cancelled'}
+                Ticket {finalStatus === 'used' ? 'Used' : finalStatus === 'cancelled' ? 'Cancelled' : 'Expired'}
             </h1>
             <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button asChild variant="outline" className="h-12"><Link href="/booking-history">View History</Link></Button>
@@ -112,19 +118,11 @@ function TicketContent() {
     );
   }
 
-  const issueDate = new Date(ticket.createdAt);
-  const expiryTimestamp = issueDate.getTime() + 10 * 60 * 1000;
-  const isCurrentlyExpired = ticket.status === 'expired' || (ticket.status === 'valid' && new Date().getTime() > expiryTimestamp);
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
   return (
     <div className="flex flex-col items-center p-4 md:p-8">
-      <Card className={cn("w-full max-w-md border-t-8", {
-        "border-t-green-600": ticket.status === 'valid' && !isCurrentlyExpired,
-        "border-t-yellow-500": isCurrentlyExpired,
-        "border-t-red-600": ticket.status === 'cancelled',
-        "border-t-slate-400": ticket.status === 'used',
-      })}>
+      <Card className={cn("w-full max-w-md border-t-8 border-t-green-600")}>
         <CardHeader className="text-center relative">
           <Button 
             variant="ghost" 
@@ -137,13 +135,8 @@ function TicketContent() {
           </Button>
           <CardTitle className="font-headline text-2xl uppercase">Digital Ticket</CardTitle>
           <div className="flex justify-center mt-2">
-            <Badge className={cn("capitalize font-bold px-4 py-1", {
-                "bg-green-600 hover:bg-green-600": ticket.status === 'valid' && !isCurrentlyExpired,
-                "bg-yellow-500 hover:bg-yellow-500": isCurrentlyExpired,
-                "bg-red-600 hover:bg-red-600": ticket.status === 'cancelled',
-                "bg-slate-500 hover:bg-slate-500": ticket.status === 'used',
-            })}>
-                {isCurrentlyExpired ? 'expired' : ticket.status}
+            <Badge className="capitalize font-bold px-4 py-1 bg-green-600 hover:bg-green-600">
+                {ticket.status}
             </Badge>
           </div>
         </CardHeader>

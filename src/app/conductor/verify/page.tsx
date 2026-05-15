@@ -101,22 +101,24 @@ export default function VerifyTicketPage() {
 
         {status === 'found' && ticket && (
           <div className="w-full max-w-md mt-4 space-y-4">
-            {ticket.status === 'used' || ticket.status === 'cancelled' ? (
-                <Card className={cn("border-t-8", ticket.status === 'used' ? "border-t-slate-400" : "border-t-red-600")}>
+            {ticket.status === 'used' || ticket.status === 'cancelled' || ticket.status === 'expired' ? (
+                <Card className={cn("border-t-8", 
+                  ticket.status === 'used' ? "border-t-slate-400" : 
+                  ticket.status === 'cancelled' ? "border-t-red-600" : "border-t-yellow-500"
+                )}>
                     <CardHeader className="text-center p-10">
-                        <CardTitle className={cn("text-3xl font-bold uppercase", ticket.status === 'used' ? "text-slate-500" : "text-red-600")}>
-                            TICKET {ticket.status === 'used' ? 'USED' : 'CANCELLED'}
+                        <CardTitle className={cn("text-3xl font-bold uppercase", 
+                          ticket.status === 'used' ? "text-slate-500" : 
+                          ticket.status === 'cancelled' ? "text-red-600" : "text-yellow-500"
+                        )}>
+                            TICKET {ticket.status}
                         </CardTitle>
                     </CardHeader>
                 </Card>
             ) : (
                 <Card className="overflow-hidden">
                     <CardHeader className="text-center bg-muted/30">
-                        {ticket.status === 'valid' ? (
-                            <CheckCircle className="mx-auto text-green-500 h-12 w-12" />
-                        ) : (
-                            <Clock className="mx-auto text-yellow-500 h-12 w-12" />
-                        )}
+                        <CheckCircle className="mx-auto text-green-500 h-12 w-12" />
                         <CardTitle className="mt-2 text-2xl font-bold uppercase tracking-wider">{ticket.status}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 pt-6">

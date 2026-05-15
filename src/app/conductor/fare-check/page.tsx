@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -107,7 +106,7 @@ export default function FareCheckPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 busType: actualBusType,
-                totalFare: calculatedTotal, // Update total value in DB
+                totalFare: calculatedTotal,
                 fare: (ticketDetails.fare || 0) + (fareDifference > 0 ? fareDifference : 0)
             })
         });
@@ -134,12 +133,14 @@ export default function FareCheckPage() {
   const getStatusContent = () => {
     if (status === 'idle' || status === 'loading') return null;
     
-    if (status === 'validated' || status === 'used' || status === 'cancelled') {
-        const isCancelled = status === 'cancelled' || (ticketDetails && ticketDetails.status === 'cancelled');
+    if (status === 'validated' || status === 'used' || status === 'cancelled' || status === 'expired') {
         return (
             <div className="space-y-4 w-full max-w-md text-center">
-                <h1 className={cn("text-4xl font-bold uppercase tracking-widest", isCancelled ? "text-red-600" : "text-slate-500")}>
-                    TICKET {isCancelled ? 'CANCELLED' : 'USED'}
+                <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
+                    status === 'used' || status === 'validated' ? "text-slate-500" : 
+                    status === 'cancelled' ? "text-red-600" : "text-yellow-500"
+                )}>
+                    TICKET {status === 'validated' ? 'USED' : status.toUpperCase()}
                 </h1>
             </div>
         );
@@ -152,14 +153,6 @@ export default function FareCheckPage() {
                 <p className="font-bold">Ticket Not Found</p>
                 <p className="text-sm">Verify the code and try again.</p>
             </Card>
-        );
-    }
-
-    if (status === 'expired') {
-        return (
-            <div className="space-y-4 w-full max-w-md text-center">
-                <h1 className="text-4xl font-bold uppercase tracking-widest text-yellow-500">TICKET EXPIRED</h1>
-            </div>
         );
     }
     
