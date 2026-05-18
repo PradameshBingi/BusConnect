@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import Link from 'next/link';
 import Header from '@/app/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw, Loader2 } from 'lucide-react';
+import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw, Loader2, ChevronRight } from 'lucide-react';
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { cn } from '@/lib/utils';
 import {
@@ -61,13 +62,10 @@ export default function BookingHistoryPage() {
             const res = await fetch(`${API_ENDPOINTS.VERIFY}/${t.ticketCode}`);
             if (res.ok) {
               const data = await res.json();
-              
-              // Detect auto-refund from server
               if (data.status === 'expired' && data.refundAmount > 0) {
                  autoRefundTotal += data.refundAmount;
                  refundsCount++;
               }
-              
               return { ...t, status: data.status };
             }
           } catch (e) {
@@ -77,7 +75,6 @@ export default function BookingHistoryPage() {
         return t;
       }));
 
-      // Apply auto-refunds to wallet if any occurred during sync
       if (autoRefundTotal > 0) {
           const walletData = JSON.parse(localStorage.getItem('userWallet') || '{"balance":0, "transactions":[]}');
           walletData.balance += autoRefundTotal;
@@ -90,13 +87,13 @@ export default function BookingHistoryPage() {
           localStorage.setItem('userWallet', JSON.stringify(walletData));
           toast({ 
             title: "Auto-Refund Applied", 
-            description: `Rs. ${autoRefundTotal.toFixed(2)} refunded to wallet for ${refundsCount} expired ticket(s).` 
+            description: `Rs. ${autoRefundTotal.toFixed(2)} refunded to wallet.` 
           });
       }
 
       localStorage.setItem('generatedTickets', JSON.stringify(updatedTickets));
       setTickets([...updatedTickets].reverse());
-      if (!silent) toast({ title: "Updated", description: "Ticket statuses synced with database." });
+      if (!silent) toast({ title: "Updated", description: "Status synced with database." });
     } catch (error) {
       if (!silent) toast({ variant: 'destructive', title: "Sync Error", description: "Could not reach server." });
     } finally {
@@ -107,7 +104,6 @@ export default function BookingHistoryPage() {
   useEffect(() => {
     setIsClient(true);
     loadLocalTickets();
-    // Auto-sync on mount to catch any server-side expiry or conductor validations
     setTimeout(() => syncStatuses(true), 500);
   }, []);
 
@@ -119,7 +115,7 @@ export default function BookingHistoryPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || "Failed to cancel ticket on server");
+        throw new Error(data.message || "Failed to cancel ticket");
       }
 
       const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
@@ -146,9 +142,9 @@ export default function BookingHistoryPage() {
       }
 
       setTickets([...storedTickets].reverse());
-      toast({ title: 'Success', description: 'Ticket cancelled and refunded to wallet.' });
+      toast({ title: 'Success', description: 'Ticket cancelled and refunded.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Cancellation Failed', description: error.message });
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   };
 
@@ -166,7 +162,7 @@ export default function BookingHistoryPage() {
   return (
     <>
       <Header showBackButton={true} backHref="/select-ticket-type" title="Booking History" />
-      <div className="p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="p-4 md:p-8 max-w-2xl mx-auto pb-32">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <History className="h-8 w-8 text-primary" />
@@ -174,11 +170,11 @@ export default function BookingHistoryPage() {
           </div>
           <Button variant="outline" size="sm" onClick={() => syncStatuses(false)} disabled={isRefreshing}>
             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
-            Sync Status
+            Sync
           </Button>
         </div>
         {tickets.length === 0 ? (
-          <Card><CardContent className="p-6 text-center">No booking history found.</CardContent></Card>
+          <Card><CardContent className="p-10 text-center text-muted-foreground">No recent bookings found.</CardContent></Card>
         ) : (
           <div className="space-y-4">
             {tickets.map(ticket => {
@@ -187,60 +183,64 @@ export default function BookingHistoryPage() {
               const canUpgrade = ticket.busType !== 'deluxe' && status === 'valid';
 
               return (
-              <Card key={ticket.ticketCode} className={cn("border-l-4 shadow-sm", {
+              <Card key={ticket.ticketCode} className={cn("border-l-4 shadow-sm group hover:shadow-md transition-shadow", {
                 "border-l-green-600": status === 'valid',
-                "border-l-slate-400": status === 'used',
+                "border-l-slate-500": status === 'used',
                 "border-l-yellow-500": status === 'expired',
                 "border-l-red-600": status === 'cancelled',
               })}>
                 <CardHeader className="flex flex-row justify-between items-start p-4 pb-2">
-                   <div>
-                     <Link href={`/ticket?id=${ticket.ticketCode}`} className="font-mono font-bold text-primary hover:underline">{ticket.ticketCode}</Link>
-                     <CardDescription className="text-xs">{new Date(ticket.createdAt).toLocaleString()}</CardDescription>
+                   <div className="flex-grow">
+                     <Link href={`/ticket?id=${ticket.ticketCode}`} className="font-mono font-bold text-primary hover:underline flex items-center gap-1">
+                        {ticket.ticketCode}
+                        <ChevronRight className="h-4 w-4" />
+                     </Link>
+                     <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground">{new Date(ticket.createdAt).toLocaleString()}</CardDescription>
                    </div>
                    <Badge
                      className={cn("capitalize font-bold px-3 py-1 text-white border-transparent", {
-                        "bg-yellow-500 hover:bg-yellow-500": status === 'expired',
-                        "bg-red-600 hover:bg-red-600": status === 'cancelled',
                         "bg-green-600 hover:bg-green-600": status === 'valid',
                         "bg-slate-500 hover:bg-slate-500": status === 'used',
+                        "bg-yellow-500 hover:bg-yellow-500": status === 'expired',
+                        "bg-red-600 hover:bg-red-600": status === 'cancelled',
                      })}
                    >
                        {status}
                    </Badge>
                 </CardHeader>
                 <CardContent className="p-4 pt-2">
-                    <div className="flex justify-between text-sm font-bold">
-                        <p>From: {ticket.from}</p><p>To: {ticket.to}</p>
+                    <div className="flex justify-between text-sm font-bold text-slate-900">
+                        <p>{ticket.from}</p>
+                        <ArrowRight className="h-4 w-4 text-primary mt-0.5" />
+                        <p>{ticket.to}</p>
                     </div>
-                     <div className="flex justify-between items-end mt-3 text-sm">
+                     <div className="flex justify-between items-end mt-4 text-sm">
                         <div className="space-y-1">
-                            <p className="font-bold">Total: Rs. {totalCost.toFixed(2)}</p>
+                            <p className="font-bold text-slate-800">Total: Rs. {totalCost.toFixed(2)}</p>
                             {(ticket.walletAmountUsed || 0) > 0 ? (
-                                <p className="text-[10px] text-primary flex items-center gap-1 font-medium">
-                                    <Wallet className="h-3 w-3" /> Wallet: Rs. {ticket.walletAmountUsed?.toFixed(2)}
+                                <p className="text-[10px] text-primary flex items-center gap-1 font-bold">
+                                    <Wallet className="h-3 w-3" /> Wallet Used: Rs. {ticket.walletAmountUsed?.toFixed(2)}
                                 </p>
                             ) : null}
                         </div>
-                        <Badge variant="outline">{getFullBusType(ticket.busType)}</Badge>
+                        <Badge variant="outline" className="border-primary text-primary font-bold text-[10px] uppercase">{getFullBusType(ticket.busType)}</Badge>
                      </div>
-                     <div className="flex items-center text-xs mt-3 text-muted-foreground"><User className="h-3 w-3 mr-1"/> {ticket.passengers}</div>
-                     <div className="flex items-center text-xs mt-1 text-muted-foreground"><ShieldCheck className="h-3 w-3 mr-1"/> PIN: <span className="font-bold text-primary">{ticket.securityCode}</span></div>
+                     <div className="flex items-center text-[11px] mt-4 text-muted-foreground font-medium"><User className="h-3.5 w-3.5 mr-1.5 text-slate-400"/> {ticket.passengers}</div>
                     
                     {status === 'valid' && (
                       <div className="mt-4 pt-4 border-t space-y-4">
                         <CountdownTimer expiryTimestamp={new Date(ticket.createdAt).getTime() + (10 * 60 * 1000)} />
                         <div className={cn("grid gap-2", canUpgrade ? "grid-cols-2" : "grid-cols-1")}>
                           {canUpgrade && (
-                            <Button asChild variant="outline" size="sm" className="border-primary text-primary">
+                            <Button asChild variant="outline" size="sm" className="border-primary text-primary font-bold">
                               <Link href={`/upgrade-ticket?id=${ticket.ticketCode}`}><ArrowUpCircle className="mr-2 h-4 w-4" /> Upgrade</Link>
                             </Button>
                           )}
                           <AlertDialog>
-                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full">Cancel</Button></AlertDialogTrigger>
+                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-full font-bold">Cancel</Button></AlertDialogTrigger>
                             <AlertDialogContent>
-                              <AlertDialogHeader><AlertDialogTitle>Cancel Ticket?</AlertDialogTitle><AlertDialogDescription>10% fee applies. Refund to wallet.</AlertDialogDescription></AlertDialogHeader>
-                              <AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => handleCancelTicket(ticket.ticketCode)}>Yes, Cancel</AlertDialogAction></AlertDialogFooter>
+                              <AlertDialogHeader><AlertDialogTitle>Cancel Journey?</AlertDialogTitle><AlertDialogDescription>10% fee applies. Refund added to wallet.</AlertDialogDescription></AlertDialogHeader>
+                              <AlertDialogFooter><AlertDialogCancel>No</AlertDialogCancel><AlertDialogAction onClick={() => handleCancelTicket(ticket.ticketCode)} className="bg-red-600 hover:bg-red-700">Confirm</AlertDialogAction></AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
                         </div>

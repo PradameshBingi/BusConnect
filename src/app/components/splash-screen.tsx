@@ -1,3 +1,4 @@
+
 import { Bus } from "lucide-react";
 
 export function SplashScreen() {
@@ -7,12 +8,12 @@ export function SplashScreen() {
           <Bus className="h-20 w-20 animate-move-bus mx-auto" />
       </div>
       <div className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-3xl font-bold font-headline tracking-wider">TGSRTC</h1>
-        <p className="text-xl">Digital Ticket Booking</p>
+        <h1 className="text-3xl font-bold font-headline tracking-widest">TGSRTC</h1>
+        <p className="text-xl font-medium">Digital Ticket Booking</p>
       </div>
-      <div className="absolute bottom-10 text-center">
-        <p className="text-sm text-primary-foreground/90">Conceptualized and Developed by</p>
-        <p className="font-bold text-3xl" style={{ color: '#0A2B70' }}>BINGI PRADAMESH</p>
+      <div className="absolute bottom-12 text-center">
+        <p className="text-[10px] uppercase font-bold tracking-[0.2em] mb-2 text-primary-foreground/80">Conceptualized and Developed by</p>
+        <p className="font-bold text-4xl tracking-tighter" style={{ color: '#0A2B70' }}>BINGI PRADAMESH</p>
       </div>
     </div>
   );
