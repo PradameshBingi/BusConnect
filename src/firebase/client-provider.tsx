@@ -13,9 +13,9 @@ import { firebaseConfig } from '@/firebase/config';
 
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
   const [firebase, setFirebase] = useState<{
-    app: FirebaseApp;
-    firestore: Firestore;
-    auth: Auth;
+    app: FirebaseApp | null;
+    firestore: Firestore | null;
+    auth: Auth | null;
     analytics?: Analytics;
     messaging?: Messaging;
   } | null>(null);
@@ -28,19 +28,21 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
         setFirebase(services);
       } catch (e: any) {
         console.error("Firebase initialization failed:", e.message);
+        setFirebase({ app: null, firestore: null, auth: null });
       }
     } else {
       console.warn("Firebase API Key is missing. Firebase supportive services will be disabled.");
+      setFirebase({ app: null, firestore: null, auth: null });
     }
     setInitAttempted(true);
   }, []);
 
-  if (!initAttempted) {
-    return <div className="contents">{children}</div>;
-  }
-
-  if (!firebase) {
-    return <>{children}</>;
+  if (!initAttempted || !firebase) {
+    return (
+      <FirebaseProvider app={null} firestore={null} auth={null}>
+        {children}
+      </FirebaseProvider>
+    );
   }
 
   return (

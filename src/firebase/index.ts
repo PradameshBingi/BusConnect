@@ -25,6 +25,10 @@ let analytics: Analytics | undefined;
 let messaging: Messaging | undefined;
 
 function initializeFirebase() {
+  if (!firebaseConfig.apiKey) {
+    throw new Error("Missing Firebase API Key");
+  }
+
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
   } else {
@@ -36,10 +40,15 @@ function initializeFirebase() {
   
   if (typeof window !== 'undefined') {
     isSupported().then(supported => {
-      if (supported) analytics = getAnalytics(app);
+      if (supported) {
+        try {
+          analytics = getAnalytics(app);
+        } catch (e) {
+          console.warn("Analytics initialization failed");
+        }
+      }
     });
     
-    // Messaging setup (requires service worker for full functionality)
     try {
       messaging = getMessaging(app);
     } catch (e) {
