@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 import { CountdownTimer } from '@/app/components/countdown-timer';
-import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Copy, RefreshCw, Loader2, XCircle } from 'lucide-react';
@@ -107,9 +106,6 @@ function TicketContent() {
   const displayStatus = isCurrentlyExpired ? 'expired' : ticket.status;
 
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
-  
-  // Show pink ticket for Valid and Used statuses
-  const showGeneratedTicket = displayStatus === 'valid' || displayStatus === 'used';
 
   return (
     <div className="flex flex-col items-center p-4 md:p-8 space-y-6">
@@ -196,15 +192,6 @@ function TicketContent() {
           <Button asChild className="w-full h-11"><Link href="/">Back to Dashboard</Link></Button>
         </CardFooter>
       </Card>
-
-      {showGeneratedTicket && (
-        <div className="w-full max-w-md pb-10 flex flex-col items-center">
-            <p className="text-center text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest opacity-80">
-                {displayStatus === 'used' ? "Journey Receipt" : "Journey Preview"}
-            </p>
-            <GeneratedTicket ticket={ticket as any} />
-        </div>
-      )}
     </div>
   );
 }
