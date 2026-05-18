@@ -108,39 +108,18 @@ export default function VerifyTicketPage() {
 
         {status === 'found' && ticket && (
           <div className="w-full max-w-md space-y-4">
-            {/* If it was ALREADY used/expired/cancelled before searching, show details + status text */}
             {(ticket.status === 'used' || ticket.status === 'cancelled' || ticket.status === 'expired') && !justValidated ? (
                 <Card className="overflow-hidden">
-                    <CardHeader className="text-center bg-muted/10">
+                    <CardHeader className="text-center bg-muted/10 py-12">
                         <h1 className={cn("text-4xl font-bold uppercase tracking-widest", 
                             ticket.status === 'used' ? "text-slate-500" : 
                             ticket.status === 'cancelled' ? "text-red-600" : "text-yellow-500"
                         )}>
-                            {ticket.status}
+                            TICKET {ticket.status}
                         </h1>
                     </CardHeader>
-                    <CardContent className="space-y-4 pt-6">
-                        <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">FROM</p>
-                                <p className="font-bold">{ticket.from}</p>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-primary" />
-                            <div className="text-center">
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase">TO</p>
-                                <p className="font-bold">{ticket.to}</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                            <p className="text-muted-foreground">Passengers:</p>
-                            <p className="font-bold text-right">{ticket.passengers}</p>
-                            <p className="text-muted-foreground">Fare Paid:</p>
-                            <p className="font-bold text-right text-primary">Rs. {ticket.totalFare?.toFixed(2)}</p>
-                        </div>
-                    </CardContent>
                 </Card>
             ) : justValidated ? (
-                /* If it was JUST validated, show receipt */
                 <div className="space-y-4">
                     <div className="text-center p-6 bg-green-50 rounded-lg border border-green-200">
                         <CheckCircle className="mx-auto text-green-500 h-10 w-10 mb-2" />
@@ -150,7 +129,6 @@ export default function VerifyTicketPage() {
                     <GeneratedTicket ticket={ticket} />
                 </div>
             ) : (
-                /* Standard verification view for a VALID ticket */
                 <Card className="overflow-hidden">
                     <CardHeader className="text-center bg-muted/30">
                         <CheckCircle className="mx-auto text-green-500 h-12 w-12" />

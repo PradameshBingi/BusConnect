@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { API_ENDPOINTS } from '@/lib/api-config';
+import { GeneratedTicket } from '@/app/components/generated-ticket';
 
 type Ticket = {
   from: string;
@@ -173,11 +174,11 @@ function TicketContent() {
                 </div>
             </div>
 
-            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2 cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')}>
+            <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2">
                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tight">Security Code</p>
                 <div className="flex items-center justify-center w-full">
                     <p className="font-mono text-3xl font-bold tracking-[0.3em] text-primary">{ticket.securityCode}</p>
-                    <Copy className="h-4 w-4 text-muted-foreground ml-2" />
+                    <Copy className="h-4 w-4 text-muted-foreground ml-2 cursor-pointer" onClick={() => handleCopy(ticket.securityCode, 'PIN')} />
                 </div>
             </div>
 
@@ -192,6 +193,13 @@ function TicketContent() {
           <Button asChild className="w-full h-11"><Link href="/">Back to Dashboard</Link></Button>
         </CardFooter>
       </Card>
+
+      {displayStatus === 'used' && (
+        <div className="w-full max-w-md pb-10 flex flex-col items-center">
+            <p className="text-xs uppercase font-bold text-muted-foreground mb-4 tracking-widest">Journey Receipt</p>
+            <GeneratedTicket ticket={ticket as any} />
+        </div>
+      )}
     </div>
   );
 }
