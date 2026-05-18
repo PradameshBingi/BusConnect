@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { SimulatedPayment } from '@/components/simulated-payment';
 
+export const dynamic = "force-dynamic";
+
 type Refund = {
   code: string;
   amount: number;

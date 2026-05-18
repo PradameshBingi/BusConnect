@@ -1,9 +1,12 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
 import { BookingForm } from './booking-form';
 import Header from '@/app/components/header';
 import { Suspense } from 'react';
+
+export const dynamic = "force-dynamic";
 
 function BookTicketContent() {
   const searchParams = useSearchParams();

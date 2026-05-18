@@ -16,6 +16,8 @@ import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { logEvent } from 'firebase/analytics';
 import { useAnalytics } from '@/firebase';
 
+export const dynamic = "force-dynamic";
+
 export default function VerifyTicketPage() {
     const [ticketCode, setTicketCode] = useState('');
     const [ticket, setTicket] = useState<any>(null);
