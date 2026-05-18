@@ -18,10 +18,9 @@ async function dbConnect() {
     return cached.conn;
   }
 
-  // If URI is missing, we don't throw here, we return null to allow the API to handle "Simulated Mode"
   if (!MONGODB_URI || MONGODB_URI.trim() === "") {
-    console.warn("⚠️ MONGODB_URI is missing. The application will run in SIMULATED MODE.");
-    return null;
+    console.error("❌ CRITICAL: MONGODB_URI environment variable is missing.");
+    throw new Error("Database configuration (MONGODB_URI) is missing.");
   }
 
   if (!cached.promise) {
@@ -42,7 +41,7 @@ async function dbConnect() {
     }).catch((err) => {
       console.error("❌ MongoDB Connection Error:", err.message);
       cached.promise = null;
-      throw new Error(`Failed to connect to database: ${err.message}`);
+      throw new Error(`Could not reach database: ${err.message}`);
     });
   }
   
