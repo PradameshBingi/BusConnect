@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -30,17 +31,17 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        {mounted && isLoading ? <SplashScreen /> : null}
-        <div style={{ display: mounted && !isLoading ? 'block' : 'none' }} className="flex-grow">
-          <FirebaseClientProvider>
+        <FirebaseClientProvider>
+          {mounted && isLoading ? <SplashScreen /> : null}
+          <div style={{ display: mounted && !isLoading ? 'block' : 'none' }} className="flex-grow">
             <main className="pb-24">{children}</main>
             <Toaster />
             <footer className="bg-white p-4 text-center border-t fixed bottom-0 w-full z-40">
               <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mb-1">Powered by</p>
               <p className="font-bold text-xl tracking-tight" style={{ color: '#0A2B70' }}>BINGI PRADAMESH</p>
             </footer>
-          </FirebaseClientProvider>
-        </div>
+          </div>
+        </FirebaseClientProvider>
       </body>
     </html>
   );

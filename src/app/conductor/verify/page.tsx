@@ -16,6 +16,7 @@ import { GeneratedTicket } from '@/app/components/generated-ticket';
 import { logEvent } from 'firebase/analytics';
 import { useAnalytics } from '@/firebase';
 
+// Strictly enforce dynamic rendering to avoid prerender errors with Firebase/Analytics
 export const dynamic = "force-dynamic";
 
 export default function VerifyTicketPage() {
@@ -69,7 +70,7 @@ export default function VerifyTicketPage() {
             const result = await response.json();
             const updatedTicket = result.ticket;
             
-            // Analytics: Track Validation
+            // Analytics: Track Validation if service is available
             if (analytics) {
               logEvent(analytics, 'ticket_validated', {
                 ticket_code: updatedTicket.ticketCode,

@@ -8,23 +8,20 @@ import type { Auth } from 'firebase/auth';
 import type { Analytics } from 'firebase/analytics';
 import type { Messaging } from 'firebase/messaging';
 
-const FirebaseContext = createContext<{
+export interface FirebaseContextValue {
   app: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null;
   analytics?: Analytics;
   messaging?: Messaging;
-} | null>(null);
+}
+
+const FirebaseContext = createContext<FirebaseContextValue | null>(null);
 
 export function FirebaseProvider({
   children,
   ...value
-}: {
-  app: FirebaseApp | null;
-  firestore: Firestore | null;
-  auth: Auth | null;
-  analytics?: Analytics;
-  messaging?: Messaging;
+}: FirebaseContextValue & {
   children: React.ReactNode;
 }) {
   return (
@@ -51,6 +48,7 @@ export function useAuth() {
 
 export function useAnalytics() {
   const context = useContext(FirebaseContext);
+  // Safely return analytics without throwing, supporting Firebase as an optional service
   return context?.analytics;
 }
 
