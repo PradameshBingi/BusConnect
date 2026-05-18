@@ -1,8 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2 } from 'lucide-react';
+import { logEvent } from 'firebase/analytics';
+import { useAnalytics } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -63,6 +66,7 @@ export function BookingForm() {
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
+  const analytics = useAnalytics();
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
@@ -165,6 +169,9 @@ export function BookingForm() {
       };
 
       const response = await fetch(API_ENDPOINTS.CREATE, {
+        // IMPORTANT: Sending FCM trigger could happen here on the server
+        // But since we are restricted to client-side for Firebase supportive services
+        // we handle notifications via client hooks if possible.
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)
@@ -173,6 +180,17 @@ export function BookingForm() {
       if (!response.ok) throw new Error("Server failed to create ticket");
       const result = await response.json();
       const ticket = result.ticket;
+
+      // Analytics: Track Booking
+      if (analytics) {
+        logEvent(analytics, 'ticket_booked', {
+          from: ticket.from,
+          to: ticket.to,
+          bus_type: ticket.busType,
+          total_fare: ticket.totalFare,
+          passenger_count: Object.values(quantities).reduce((a, b) => a + b, 0)
+        });
+      }
 
       // Deduct wallet if used
       if (useWallet && ticket.walletAmountUsed > 0) {

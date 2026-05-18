@@ -13,6 +13,8 @@ import { API_ENDPOINTS } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { GeneratedTicket } from '@/app/components/generated-ticket';
+import { logEvent } from 'firebase/analytics';
+import { useAnalytics } from '@/firebase';
 
 export default function VerifyTicketPage() {
     const [ticketCode, setTicketCode] = useState('');
@@ -22,6 +24,7 @@ export default function VerifyTicketPage() {
     const [showPin, setShowPin] = useState(false);
     const [justValidated, setJustValidated] = useState(false);
     const { toast } = useToast();
+    const analytics = useAnalytics();
 
     const handleVerification = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,7 +65,18 @@ export default function VerifyTicketPage() {
             if (!response.ok) throw new Error("Validation failed");
             
             const result = await response.json();
-            setTicket(result.ticket);
+            const updatedTicket = result.ticket;
+            
+            // Analytics: Track Validation
+            if (analytics) {
+              logEvent(analytics, 'ticket_validated', {
+                ticket_code: updatedTicket.ticketCode,
+                bus_type: updatedTicket.busType,
+                route: `${updatedTicket.from} - ${updatedTicket.to}`
+              });
+            }
+
+            setTicket(updatedTicket);
             setJustValidated(true);
             toast({ title: "Validated", description: "Ticket status updated to USED in database." });
         } catch (error) {

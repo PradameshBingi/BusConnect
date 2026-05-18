@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Route": {
@@ -48,7 +49,7 @@
         "status": {
           "type": "string",
           "description": "The current status of the ticket.",
-          "enum": ["valid", "invalid"]
+          "enum": ["valid", "invalid", "used", "expired", "cancelled"]
         },
         "createdAt": {
           "type": "string",
@@ -60,7 +61,7 @@
     }
   },
   "auth": {
-    "providers": []
+    "providers": ["phone"]
   },
   "firestore": {}
 }

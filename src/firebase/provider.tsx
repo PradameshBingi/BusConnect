@@ -1,12 +1,19 @@
+
 'use client';
 
-import {createContext, useContext} from 'react';
-import type {FirebaseApp} from 'firebase/app';
-import type {Firestore} from 'firebase/firestore';
+import { createContext, useContext } from 'react';
+import type { FirebaseApp } from 'firebase/app';
+import type { Firestore } from 'firebase/firestore';
+import type { Auth } from 'firebase/auth';
+import type { Analytics } from 'firebase/analytics';
+import type { Messaging } from 'firebase/messaging';
 
 const FirebaseContext = createContext<{
   app: FirebaseApp;
   firestore: Firestore;
+  auth: Auth;
+  analytics?: Analytics;
+  messaging?: Messaging;
 } | null>(null);
 
 export function FirebaseProvider({
@@ -15,6 +22,9 @@ export function FirebaseProvider({
 }: {
   app: FirebaseApp;
   firestore: Firestore;
+  auth: Auth;
+  analytics?: Analytics;
+  messaging?: Messaging;
   children: React.ReactNode;
 }) {
   return (
@@ -38,4 +48,28 @@ export function useFirestore() {
     throw new Error('useFirestore must be used within a FirebaseProvider');
   }
   return context.firestore;
+}
+
+export function useAuth() {
+  const context = useContext(FirebaseContext);
+  if (context === null) {
+    throw new Error('useAuth must be used within a FirebaseProvider');
+  }
+  return context.auth;
+}
+
+export function useAnalytics() {
+  const context = useContext(FirebaseContext);
+  if (context === null) {
+    throw new Error('useAnalytics must be used within a FirebaseProvider');
+  }
+  return context.analytics;
+}
+
+export function useMessaging() {
+  const context = useContext(FirebaseContext);
+  if (context === null) {
+    throw new Error('useMessaging must be used within a FirebaseProvider');
+  }
+  return context.messaging;
 }
