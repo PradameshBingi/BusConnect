@@ -1,15 +1,10 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = "mongodb+srv://BusConnect:Qwer1234@cluster0.2e7tkui.mongodb.net/BusConnect?retryWrites=true&w=majority";
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
+const MONGODB_URI = process.env.MONGODB_URI || "";
 
 /**
  * Global is used here to maintain a cached connection across hot reloads
  * in development. This prevents connections from growing exponentially
- * during API Route usage.
  */
 let cached = (global as any).mongoose;
 
@@ -22,19 +17,25 @@ async function dbConnect() {
     return cached.conn;
   }
 
+  if (!MONGODB_URI) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error("❌ MONGODB_URI is missing in production environment");
+    }
+    return null;
+  }
+
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      // Bypasses SSL certificate validation errors commonly found in restricted network environments
       tlsAllowInvalidCertificates: true,
-      connectTimeoutMS: 10000, // 10 seconds timeout
-      socketTimeoutMS: 45000,  // 45 seconds socket timeout
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
     };
 
-    console.log("📡 Connecting to MongoDB Atlas...");
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    console.log("📡 Connecting to MongoDB...");
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
       console.log("✅ MongoDB Connected Successfully");
-      return mongoose;
+      return mongooseInstance;
     }).catch((err) => {
       console.error("❌ MongoDB Connection Error:", err.message);
       cached.promise = null;
@@ -54,7 +55,7 @@ async function dbConnect() {
 
 export default dbConnect;
 
-// Define Schema
+// Ticket Schema Definition
 const TicketSchema = new mongoose.Schema({
   from: { type: String, required: true },
   to: { type: String, required: true },
@@ -80,7 +81,7 @@ const TicketSchema = new mongoose.Schema({
   walletAmountUsed: { type: Number, default: 0 }
 });
 
-// Use existing model or create a new one
 export function getTicketModel() {
+  // Use singleton pattern for the model to prevent OverwriteModelError
   return mongoose.models.Ticket || mongoose.model('Ticket', TicketSchema);
 }

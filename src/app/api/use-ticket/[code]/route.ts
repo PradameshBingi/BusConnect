@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -9,7 +8,11 @@ export async function POST(
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 503 });
+    }
+
     const Ticket = getTicketModel();
     const { code } = await params;
     const ticketCode = code.toUpperCase();
@@ -18,7 +21,6 @@ export async function POST(
     const ticket = await Ticket.findOne({ ticketCode });
     if (!ticket) return NextResponse.json({ status: "invalid" }, { status: 404 });
 
-    // Prevent using a ticket that is already used, cancelled, or expired
     if (ticket.status === "used") {
       return NextResponse.json({ status: "already_used", message: "Ticket already validated" }, { status: 400 });
     }
@@ -27,7 +29,6 @@ export async function POST(
       return NextResponse.json({ status: "cancelled", message: "Ticket is cancelled" }, { status: 400 });
     }
 
-    // Final safety check for expiry before marking as used
     const now = new Date();
     const createdAt = new Date(ticket.createdAt);
     const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000);
@@ -41,13 +42,12 @@ export async function POST(
     ticket.status = "used";
     ticket.validatedAt = new Date();
 
-    // CRITICAL: Update database with actual boarding details and total fare
     if (updateData.busType) ticket.busType = updateData.busType;
     if (updateData.totalFare) ticket.totalFare = updateData.totalFare;
     if (updateData.fare) ticket.fare = updateData.fare;
 
     await ticket.save();
-    console.log(`✅ Ticket ${ticketCode} marked as USED with total fare Rs. ${ticket.totalFare}`);
+    console.log(`✅ Ticket ${ticketCode} marked as USED`);
     
     return NextResponse.json({ status: "updated", ticket });
   } catch (err: any) {

@@ -8,7 +8,11 @@ export async function GET(
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 503 });
+    }
+
     const Ticket = getTicketModel();
     const { code } = await params;
     
@@ -25,21 +29,16 @@ export async function GET(
 
     let refundAmount = 0;
 
-    // Auto-expiry logic: Mark as expired if not used within 10 minutes
     if (ticket.status === 'valid') {
         const now = new Date();
         const createdAt = new Date(ticket.createdAt);
-        const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000); // 10 minutes window
+        const expiryTime = new Date(createdAt.getTime() + 10 * 60 * 1000);
 
         if (now > expiryTime) {
             ticket.status = 'expired';
-            
-            // Calculate refund (Total paid - 10% fee)
             const totalPaid = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0)) || 0;
             refundAmount = Math.max(0, totalPaid - Math.round(totalPaid * 0.10));
-            
             await ticket.save();
-            console.log(`⏰ Ticket ${ticketCode} automatically expired. Refund calculated: Rs. ${refundAmount}`);
         }
     }
 

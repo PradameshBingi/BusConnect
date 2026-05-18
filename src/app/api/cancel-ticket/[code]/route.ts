@@ -8,7 +8,11 @@ export async function POST(
   { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 503 });
+    }
+    
     const Ticket = getTicketModel();
     const { code } = await params;
     const ticketCode = code.toUpperCase();
