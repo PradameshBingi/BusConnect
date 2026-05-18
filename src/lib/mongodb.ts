@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI || "";
@@ -18,17 +19,14 @@ async function dbConnect() {
   }
 
   if (!MONGODB_URI) {
-    if (process.env.NODE_ENV === 'production') {
-      console.error("❌ MONGODB_URI is missing in production environment");
-    }
-    return null;
+    throw new Error("MONGODB_URI is missing in environment variables");
   }
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
       tlsAllowInvalidCertificates: true,
-      connectTimeoutMS: 10000,
+      connectTimeoutMS: 15000,
       socketTimeoutMS: 45000,
     };
 

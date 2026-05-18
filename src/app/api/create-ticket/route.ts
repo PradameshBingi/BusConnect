@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import dbConnect, { getTicketModel } from '@/lib/mongodb';
 
@@ -5,7 +6,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    await dbConnect();
+    const conn = await dbConnect();
+    if (!conn) {
+      return NextResponse.json({ error: "Database connection failed" }, { status: 503 });
+    }
+
     const Ticket = getTicketModel();
     const data = await request.json();
     

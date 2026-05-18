@@ -169,15 +169,16 @@ export function BookingForm() {
       };
 
       const response = await fetch(API_ENDPOINTS.CREATE, {
-        // IMPORTANT: Sending FCM trigger could happen here on the server
-        // But since we are restricted to client-side for Firebase supportive services
-        // we handle notifications via client hooks if possible.
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData)
       });
 
-      if (!response.ok) throw new Error("Server failed to create ticket");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Server failed to create ticket");
+      }
+      
       const result = await response.json();
       const ticket = result.ticket;
 
@@ -211,8 +212,12 @@ export function BookingForm() {
       localStorage.setItem('generatedTickets', JSON.stringify(storedTickets));
 
       router.push(`/ticket?id=${ticket.ticketCode}`);
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Booking Failed', description: 'Could not communicate with server.' });
+    } catch (error: any) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Booking Failed', 
+        description: error.message || 'Could not communicate with server.' 
+      });
     } finally {
       setIsLoading(false);
     }
