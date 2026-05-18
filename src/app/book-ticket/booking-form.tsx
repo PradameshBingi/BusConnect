@@ -115,6 +115,14 @@ export function BookingForm() {
       toast({ variant: 'destructive', title: 'Missing Information', description: 'Please select both locations.' });
       return;
     }
+    if (from === to) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Attention', 
+        description: 'Source and Destination cannot be the same. Please select a valid route.' 
+      });
+      return;
+    }
     const totalPassengers = Object.values(quantities).reduce((sum, q) => sum + q, 0);
     if (totalPassengers === 0) {
         toast({ variant: 'destructive', title: 'No Passengers', description: 'Please add at least one passenger.' });
