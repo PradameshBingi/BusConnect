@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/app/components/header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw, Loader2, ChevronRight } from 'lucide-react';
+import { History, User, ShieldCheck, Wallet, ArrowUpCircle, RefreshCw, Loader2, ChevronRight, ArrowRight } from 'lucide-react';
 import { CountdownTimer } from '@/app/components/countdown-timer';
 import { cn } from '@/lib/utils';
 import {
@@ -54,7 +53,6 @@ export default function BookingHistoryPage() {
     try {
       const storedTickets: TicketDetails[] = JSON.parse(localStorage.getItem('generatedTickets') || '[]');
       let autoRefundTotal = 0;
-      let refundsCount = 0;
       
       const updatedTickets = await Promise.all(storedTickets.map(async (t) => {
         if (t.status === 'valid') {
@@ -64,7 +62,6 @@ export default function BookingHistoryPage() {
               const data = await res.json();
               if (data.status === 'expired' && data.refundAmount > 0) {
                  autoRefundTotal += data.refundAmount;
-                 refundsCount++;
               }
               return { ...t, status: data.status };
             }

@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -109,13 +108,10 @@ function TicketContent() {
 
   const totalCost = ticket.totalFare || (ticket.fare + (ticket.walletAmountUsed || 0));
   
-  // Rule: Show generated (pink) ticket for Valid and Used only.
   const showGeneratedTicket = displayStatus === 'valid' || displayStatus === 'used';
 
   return (
     <div className="flex flex-col items-center p-4 md:p-8 space-y-6">
-      
-      {/* 1. Details Card - Always visible for context per new instruction */}
       <Card className={cn("w-full max-w-md border-t-8", {
           "border-t-green-600": displayStatus === 'valid',
           "border-t-slate-500": displayStatus === 'used',
@@ -180,7 +176,6 @@ function TicketContent() {
                 </div>
             </div>
 
-            {/* PIN Hidden behind button as requested */}
             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 flex flex-col items-center gap-2">
                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-tight">Security Code</p>
                 {showPin ? (
@@ -207,7 +202,6 @@ function TicketContent() {
         </CardFooter>
       </Card>
 
-      {/* 2. Pink Ticket - Only for Valid (Preview) and Used (Receipt) */}
       {showGeneratedTicket && (
         <div className="w-full max-w-md pb-10 flex flex-col items-center">
             <p className="text-center text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest opacity-80">
@@ -216,7 +210,6 @@ function TicketContent() {
             <GeneratedTicket ticket={ticket as any} />
         </div>
       )}
-      
     </div>
   );
 }

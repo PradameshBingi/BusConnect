@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +16,6 @@ export default function RootLayout({
 
   useEffect(() => {
     setMounted(true);
-    // Force splash screen to clear after a short mount delay
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1200);
