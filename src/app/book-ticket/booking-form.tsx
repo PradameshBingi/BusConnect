@@ -176,7 +176,7 @@ export function BookingForm() {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "Server failed to create ticket");
+        throw new Error(errData.details || errData.error || "Server failed to process booking request.");
       }
       
       const result = await response.json();
@@ -213,10 +213,11 @@ export function BookingForm() {
 
       router.push(`/ticket?id=${ticket.ticketCode}`);
     } catch (error: any) {
+      console.error("Booking Finalization Error:", error);
       toast({ 
         variant: 'destructive', 
         title: 'Booking Failed', 
-        description: error.message || 'Could not communicate with server.' 
+        description: error.message || 'Could not communicate with the ticketing server. Please check your connection.' 
       });
     } finally {
       setIsLoading(false);

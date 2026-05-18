@@ -18,26 +18,31 @@ async function dbConnect() {
     return cached.conn;
   }
 
-  if (!MONGODB_URI) {
-    throw new Error("MONGODB_URI is missing in environment variables");
+  if (!MONGODB_URI || MONGODB_URI.trim() === "") {
+    console.error("❌ MONGODB_URI is missing or empty in environment variables");
+    throw new Error("Database configuration (MONGODB_URI) is missing.");
   }
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
       tlsAllowInvalidCertificates: true,
-      connectTimeoutMS: 15000,
+      connectTimeoutMS: 20000, // Increased timeout for slower connections
       socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 15000,
     };
 
-    console.log("📡 Connecting to MongoDB...");
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
+    console.log("📡 Attempting to connect to MongoDB...");
+    // Ensure the URI is trimmed of any accidental whitespace
+    const cleanUri = MONGODB_URI.trim();
+    
+    cached.promise = mongoose.connect(cleanUri, opts).then((mongooseInstance) => {
       console.log("✅ MongoDB Connected Successfully");
       return mongooseInstance;
     }).catch((err) => {
       console.error("❌ MongoDB Connection Error:", err.message);
       cached.promise = null;
-      throw err;
+      throw new Error(`Failed to connect to database: ${err.message}`);
     });
   }
   
