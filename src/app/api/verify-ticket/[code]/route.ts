@@ -42,12 +42,32 @@ export async function GET(
       });
     }
 
-    // Fallback for Simulated Mode: In a real prototype, you might use a local session or memory cache.
-    // For now, we return a 404 if MongoDB is missing since we can't "find" what we didn't "save" persistent.
+    // SIMULATED MODE: Return a mock ticket if DB is missing
+    // This allows the prototype to function for demonstration purposes.
+    console.log("✨ [Simulated Mode] Verifying Ticket:", ticketCode);
+    
+    // Create a believable simulated ticket based on the code provided
+    const mockTicket = {
+      ticketCode,
+      from: "Mehdipatnam",
+      to: "Kukatpally",
+      routeNo: "01",
+      passengers: "Men: 1",
+      quantities: { Men: 1, Child: 0, Women: 0 },
+      totalFare: 25,
+      fare: 25,
+      securityCode: "12345",
+      status: "valid",
+      createdAt: new Date().toISOString(),
+      busType: "ordinary",
+      simulated: true
+    };
+
     return NextResponse.json({ 
-      error: "Database Unreachable", 
-      details: "Simulated mode does not support cross-session verification. Please set MONGODB_URI." 
-    }, { status: 503 });
+      status: "valid", 
+      ticket: mockTicket,
+      details: "Running in Simulated Mode (No MongoDB URI detected)"
+    });
 
   } catch (err: any) {
     console.error("❌ API /verify-ticket Error:", err);
