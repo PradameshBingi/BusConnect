@@ -6,43 +6,38 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    // 1. Establish Database Connection
-    await dbConnect();
-
-    const Ticket = getTicketModel();
+    const conn = await dbConnect();
     const data = await request.json();
     
-    // 2. Validate essential data
     if (!data.from || !data.to || !data.securityCode) {
-      return NextResponse.json({ error: "Missing required booking data (From, To, or Security Code)" }, { status: 400 });
+      return NextResponse.json({ error: "Missing required booking data" }, { status: 400 });
     }
 
-    // 3. Generate unique ticket code
     const routeNo = data.routeNo || "00";
     const randomSuffix = Math.floor(10000 + Math.random() * 90000);
     const ticketCode = `TKT-${routeNo}-${randomSuffix}`;
 
-    // 4. Create and Save Ticket
-    const ticket = new Ticket({
+    const ticketData = {
       ...data,
       ticketCode,
       status: "valid",
       createdAt: new Date()
-    });
+    };
 
-    await ticket.save();
-    console.log("✨ Ticket Created successfully:", ticketCode);
+    // If MongoDB is connected, save to DB
+    if (conn) {
+      const Ticket = getTicketModel();
+      const ticket = new Ticket(ticketData);
+      await ticket.save();
+      return NextResponse.json({ status: "created", ticket: ticket.toObject() }, { status: 201 });
+    } 
     
-    return NextResponse.json({ status: "created", ticket }, { status: 201 });
+    // Fallback: Return simulated success for conceptual prototype
+    console.log("✨ [Simulated Mode] Ticket Created:", ticketCode);
+    return NextResponse.json({ status: "created", ticket: ticketData, simulated: true }, { status: 201 });
+
   } catch (err: any) {
     console.error("❌ API /create-ticket Error:", err);
-    
-    // Provide a descriptive error message to the client
-    const errorMessage = err.message || "Unknown database error";
-    
-    return NextResponse.json({ 
-      error: "Database operation failed", 
-      details: errorMessage 
-    }, { status: 500 });
+    return NextResponse.json({ error: "Booking Failed", details: err.message }, { status: 500 });
   }
 }

@@ -18,22 +18,22 @@ async function dbConnect() {
     return cached.conn;
   }
 
+  // If URI is missing, we don't throw here, we return null to allow the API to handle "Simulated Mode"
   if (!MONGODB_URI || MONGODB_URI.trim() === "") {
-    console.error("❌ MONGODB_URI is missing or empty in environment variables");
-    throw new Error("Database configuration (MONGODB_URI) is missing.");
+    console.warn("⚠️ MONGODB_URI is missing. The application will run in SIMULATED MODE.");
+    return null;
   }
 
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
       tlsAllowInvalidCertificates: true,
-      connectTimeoutMS: 20000, // Increased timeout for slower connections
+      connectTimeoutMS: 20000,
       socketTimeoutMS: 45000,
       serverSelectionTimeoutMS: 15000,
     };
 
     console.log("📡 Attempting to connect to MongoDB...");
-    // Ensure the URI is trimmed of any accidental whitespace
     const cleanUri = MONGODB_URI.trim();
     
     cached.promise = mongoose.connect(cleanUri, opts).then((mongooseInstance) => {
@@ -85,6 +85,5 @@ const TicketSchema = new mongoose.Schema({
 });
 
 export function getTicketModel() {
-  // Use singleton pattern for the model to prevent OverwriteModelError
   return mongoose.models.Ticket || mongoose.model('Ticket', TicketSchema);
 }
