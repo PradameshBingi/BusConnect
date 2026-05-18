@@ -4,11 +4,10 @@ import React from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building2, Ticket, Info, ChevronRight, Bell, MessageSquare, Globe, User, Wallet, HelpCircle } from 'lucide-react';
+import { Ticket, Info, ChevronRight, Bell, MessageSquare, Globe, User, Wallet, HelpCircle } from 'lucide-react';
 
 export default function Home() {
   const serviceLinks = [
-    { href: '/city-services', title: 'City Services', description: 'Find routes and bus numbers.', icon: <Building2 className="h-7 w-7 text-green-600" /> },
     { href: '/select-ticket-type', title: 'Book Bus Tickets', description: 'Buy, cancel, and manage tickets.', icon: <Ticket className="h-7 w-7 text-purple-600" /> },
     { href: '/conductor/dashboard', title: 'Conductor Tools', description: 'Verify tickets and check fares.', icon: <User className="h-7 w-7 text-red-500" /> },
     { href: '/wallet', title: 'My Wallet', description: 'Manage your balance and refunds.', icon: <Wallet className="h-7 w-7 text-orange-500" /> },
