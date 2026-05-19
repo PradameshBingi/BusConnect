@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext, useContext } from 'react';
@@ -49,6 +48,7 @@ export function useAuth() {
 export function useAnalytics() {
   const context = useContext(FirebaseContext);
   // Safely return analytics without throwing, supporting Firebase as an optional service
+  // This prevents build errors during Next.js prerendering
   return context?.analytics;
 }
 

@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI || "";
@@ -19,8 +18,9 @@ async function dbConnect() {
   }
 
   if (!MONGODB_URI || MONGODB_URI.trim() === "") {
-    console.error("❌ CRITICAL: MONGODB_URI environment variable is missing.");
-    throw new Error("Database configuration (MONGODB_URI) is missing.");
+    // Log warning instead of throwing during build/development to prevent crashes
+    console.warn("⚠️ MONGODB_URI environment variable is missing. Database operations will fail.");
+    return null;
   }
 
   if (!cached.promise) {
