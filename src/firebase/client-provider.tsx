@@ -8,7 +8,8 @@ import type { Auth } from 'firebase/auth';
 import type { Analytics } from 'firebase/analytics';
 import type { Messaging } from 'firebase/messaging';
 
-import { initializeFirebase, FirebaseProvider } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
+import { FirebaseProvider } from '@/firebase/provider';
 import { firebaseConfig } from '@/firebase/config';
 
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {

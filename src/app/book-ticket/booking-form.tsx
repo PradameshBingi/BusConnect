@@ -1,5 +1,5 @@
-
 'use client';
+export const dynamic = 'force-dynamic'; 
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -66,7 +66,7 @@ export function BookingForm() {
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const analytics = useAnalytics();
+  //const analytics = useAnalytics();
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);

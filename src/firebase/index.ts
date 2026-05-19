@@ -9,14 +9,6 @@ import { getMessaging, type Messaging } from 'firebase/messaging';
 
 import { firebaseConfig } from './config';
 
-export {
-  FirebaseProvider,
-  useFirebaseApp,
-  useFirestore,
-  useAuth,
-  useAnalytics,
-  useMessaging
-} from './provider';
 
 let app: FirebaseApp;
 let firestore: Firestore;
