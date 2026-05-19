@@ -47,8 +47,7 @@ export function useAuth() {
 
 export function useAnalytics() {
   const context = useContext(FirebaseContext);
-  // Safely return analytics without throwing, supporting Firebase as an optional service
-  // This prevents build errors during Next.js prerendering
+  // Safe return to prevent build-time crashes
   return context?.analytics;
 }
 

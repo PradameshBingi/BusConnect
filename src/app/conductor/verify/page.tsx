@@ -12,10 +12,10 @@ import { API_ENDPOINTS } from '@/lib/api-config';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { GeneratedTicket } from '@/app/components/generated-ticket';
-import { logEvent } from 'firebase/analytics';
-import { useAnalytics } from '@/firebase';
+// import { logEvent } from 'firebase/analytics';
+// import { useAnalytics } from '@/firebase';
 
-// Strictly enforce dynamic rendering to avoid prerender errors with Firebase/Analytics
+// Strictly enforce dynamic rendering to avoid prerender errors
 export const dynamic = "force-dynamic";
 
 export default function VerifyTicketPage() {
@@ -26,7 +26,7 @@ export default function VerifyTicketPage() {
     const [showPin, setShowPin] = useState(false);
     const [justValidated, setJustValidated] = useState(false);
     const { toast } = useToast();
-    const analytics = useAnalytics();
+    // const analytics = useAnalytics();
 
     const handleVerification = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,7 +69,8 @@ export default function VerifyTicketPage() {
             const result = await response.json();
             const updatedTicket = result.ticket;
             
-            // Analytics: Track Validation if service is available
+            // Analytics: Track Validation (Disabled temporarily for build stability)
+            /*
             if (analytics) {
               logEvent(analytics, 'ticket_validated', {
                 ticket_code: updatedTicket.ticketCode,
@@ -77,6 +78,7 @@ export default function VerifyTicketPage() {
                 route: `${updatedTicket.from} - ${updatedTicket.to}`
               });
             }
+            */
 
             setTicket(updatedTicket);
             setJustValidated(true);

@@ -4,8 +4,8 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRightLeft, BusFront, Baby, PlusCircle, MinusCircle, Ticket, Wallet, Loader2 } from 'lucide-react';
-import { logEvent } from 'firebase/analytics';
-import { useAnalytics } from '@/firebase';
+// import { logEvent } from 'firebase/analytics';
+// import { useAnalytics } from '@/firebase';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -66,7 +66,7 @@ export function BookingForm() {
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  //const analytics = useAnalytics();
+  // const analytics = useAnalytics();
 
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
@@ -182,7 +182,8 @@ export function BookingForm() {
       const result = await response.json();
       const ticket = result.ticket;
 
-      // Analytics: Track Booking
+      // Analytics: Track Booking (Disabled temporarily for build stability)
+      /*
       if (analytics) {
         logEvent(analytics, 'ticket_booked', {
           from: ticket.from,
@@ -192,6 +193,7 @@ export function BookingForm() {
           passenger_count: Object.values(quantities).reduce((a, b) => a + b, 0)
         });
       }
+      */
 
       // Deduct wallet if used
       if (useWallet && ticket.walletAmountUsed > 0) {

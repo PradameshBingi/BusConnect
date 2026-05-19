@@ -17,9 +17,12 @@ async function dbConnect() {
     return cached.conn;
   }
 
+  // During build phase, environment variables might be missing.
+  // We log a warning instead of throwing to prevent build crashes.
   if (!MONGODB_URI || MONGODB_URI.trim() === "") {
-    // Log warning instead of throwing during build/development to prevent crashes
-    console.warn("⚠️ MONGODB_URI environment variable is missing. Database operations will fail.");
+    if (process.env.NODE_ENV === 'production') {
+      console.warn("⚠️ MONGODB_URI environment variable is missing. Production database operations will fail.");
+    }
     return null;
   }
 
@@ -32,7 +35,6 @@ async function dbConnect() {
       serverSelectionTimeoutMS: 15000,
     };
 
-    console.log("📡 Attempting to connect to MongoDB...");
     const cleanUri = MONGODB_URI.trim();
     
     cached.promise = mongoose.connect(cleanUri, opts).then((mongooseInstance) => {
@@ -41,7 +43,10 @@ async function dbConnect() {
     }).catch((err) => {
       console.error("❌ MongoDB Connection Error:", err.message);
       cached.promise = null;
-      throw new Error(`Could not reach database: ${err.message}`);
+      // Throw only if not in build phase
+      if (process.env.NEXT_PHASE !== 'phase-production-build') {
+        throw new Error(`Could not reach database: ${err.message}`);
+      }
     });
   }
   
@@ -49,7 +54,7 @@ async function dbConnect() {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
-    throw e;
+    return null;
   }
 
   return cached.conn;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,7 +8,7 @@ import type { Analytics } from 'firebase/analytics';
 import type { Messaging } from 'firebase/messaging';
 
 import { initializeFirebase } from '@/firebase';
-import { FirebaseProvider } from '@/firebase/provider';
+import { FirebaseProvider } from './provider';
 import { firebaseConfig } from '@/firebase/config';
 
 export function FirebaseClientProvider({ children }: { children: React.ReactNode }) {
@@ -32,27 +31,21 @@ export function FirebaseClientProvider({ children }: { children: React.ReactNode
         setFirebase({ app: null, firestore: null, auth: null });
       }
     } else {
-      console.warn("Firebase API Key is missing. Firebase supportive services will be disabled.");
       setFirebase({ app: null, firestore: null, auth: null });
     }
     setInitAttempted(true);
   }, []);
 
-  if (!initAttempted || !firebase) {
-    return (
-      <FirebaseProvider app={null} firestore={null} auth={null}>
-        {children}
-      </FirebaseProvider>
-    );
-  }
+  // Always render the provider even if firebase is null to avoid context errors
+  const value = firebase || { app: null, firestore: null, auth: null };
 
   return (
     <FirebaseProvider
-      app={firebase.app}
-      firestore={firebase.firestore}
-      auth={firebase.auth}
-      analytics={firebase.analytics}
-      messaging={firebase.messaging}
+      app={value.app}
+      firestore={value.firestore}
+      auth={value.auth}
+      analytics={value.analytics}
+      messaging={value.messaging}
     >
       {children}
     </FirebaseProvider>
